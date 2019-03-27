@@ -42,5 +42,5 @@ develop_docker:
   dependencies:
     - develop_build
   variables:
-    ASSEMBLY_NAME: app
+    ASSEMBLY_NAME: aliasmailapi
     TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_PIPELINE_ID
