@@ -1,0 +1,46 @@
+stages:
+  - build
+  - publish
+
+.build: &build_template
+  stage: build
+  image: microsoft/dotnet:2.2-sdk-alpine
+  cache:
+    key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME"
+    paths:
+      - .nuget/
+  script:
+    - dotnet restore -s https://api.nuget.org/v3/index.json --packages ./.nuget/
+    - dotnet publish --no-restore -c Release -o ./docker/publish/
+
+develop_build:
+  <<: *build_template
+  only:
+    - develop
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - docker/
+
+.docker: &docker_template
+  stage: publish
+  image: docker:stable-dind
+  script:
+    - mkdir docker/app/
+    - mv docker/publish/$ASSEMBLY_NAME.* docker/app/
+    - mv docker/publish/*.config docker/app/
+    - mv docker/publish/*.json docker/app/
+    - cp Dockerfile docker/
+    - docker build -t $TAG ./docker/
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $TAG
+
+develop_docker:
+  <<: *docker_template
+  only:
+    - develop
+  dependencies:
+    - develop_build
+  variables:
+    ASSEMBLY_NAME: app
+    TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_PIPELINE_ID
