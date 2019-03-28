@@ -13,7 +13,8 @@ namespace AliasMailApi.Services
             MailGunMessage message = new MailGunMessage();
             
             message.ContentType = formDataCollection["Content-Type"];
-            message.Date = DateTime.Parse(formDataCollection["Date"]);
+            message.OriginalDate = formDataCollection["Date"];
+            //message.Date = DateTime.Parse(formDataCollection["Date"]);
             message.OriginalFrom = formDataCollection["From"];
             
             //var emailFrom = new MailAddress(message.OriginalFrom);

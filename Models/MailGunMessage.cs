@@ -7,6 +7,7 @@ namespace AliasMailApi.Models
     {
         public string ContentType { get; set; }
         public DateTime Date { get; set; }
+        public string OriginalDate { get; set; }
         public string OriginalFrom { get; set; }
         public string From { get; set; }
         public string InReplyTo { get; set; }
