@@ -38,7 +38,8 @@ namespace AliasMailApi.Services
 
             message.UserAgent = formDataCollection["User-Agent"];
             message.XMailgunVariables = formDataCollection["X-Mailgun-Variables"];
-            message.AttachmentCount = Int32.Parse(formDataCollection["attachment-count"]);
+            message.OriginalAttachmentCount = formDataCollection["attachment-count"];
+            //message.AttachmentCount = Int32.Parse(formDataCollection["attachment-count"]);
             message.BodyHtml = formDataCollection["body-html"];
             message.BodyPlain = formDataCollection["body-plain"];
             message.ContentIdMap = formDataCollection["content-id-map"];
