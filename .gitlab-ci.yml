@@ -1,3 +1,7 @@
+image: docker:latest
+services:
+  - docker:dind
+
 stages:
   - build
   - publish
@@ -24,7 +28,6 @@ develop_build:
 
 .docker: &docker_template
   stage: publish
-  image: docker:stable-dind
   script:
     - mkdir docker/app/
     - ls -l
