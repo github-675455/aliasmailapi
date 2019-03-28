@@ -16,8 +16,8 @@ namespace AliasMailApi.Services
             message.Date = DateTime.Parse(formDataCollection["Date"]);
             message.OriginalFrom = formDataCollection["From"];
             
-            var emailFrom = new MailAddress(message.OriginalFrom);
-            message.From = emailFrom.Address;
+            //var emailFrom = new MailAddress(message.OriginalFrom);
+            //message.From = emailFrom.Address;
 
             message.InReplyTo = formDataCollection["In-Reply-To"];
             message.MessageId = formDataCollection["Message-Id"];
@@ -26,14 +26,14 @@ namespace AliasMailApi.Services
             message.References = formDataCollection["References"];
             message.OriginalSender = formDataCollection["Sender"];
 
-            var emailSender = new MailAddress(message.OriginalSender);
-            message.Sender = emailSender.Address;
+            //var emailSender = new MailAddress(message.OriginalSender);
+            //message.Sender = emailSender.Address;
 
             message.Subject = formDataCollection["Subject"];
             message.OriginalTo = formDataCollection["To"];
 
-            var emailTo = new MailAddress(message.OriginalTo);
-            message.To = emailTo.Address;
+            //var emailTo = new MailAddress(message.OriginalTo);
+            //message.To = emailTo.Address;
 
             message.UserAgent = formDataCollection["User-Agent"];
             message.XMailgunVariables = formDataCollection["X-Mailgun-Variables"];
