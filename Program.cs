@@ -17,22 +17,7 @@ namespace AliasMailApi
     {
         public static void Main(string[] args)
         {
-            var host = CreateWebHostBuilder(args);
-
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var isProduction = environment == EnvironmentName.Production;
-
-            if (isProduction)
-                host.ConfigureAppConfiguration(
-                    configuration => configuration.AddKubeSecret(
-                        clientOptions: KubeClientOptions.FromPodServiceAccount(),
-                        secretName: "mailgun",
-                        kubeNamespace: "default",
-                        reloadOnChange: true
-                    )
-                );
-            
-            host.Build().Run();
+            CreateWebHostBuilder(args).Build().Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
