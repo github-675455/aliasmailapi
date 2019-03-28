@@ -30,6 +30,7 @@ develop_build:
     - ls -l
     - ls -l docker/app/
     - ls -l docker/publish/
+    - export DOCKER_HOST="tcp://localhost:2375"
     - mv docker/publish/$ASSEMBLY_NAME.* docker/app/
     - mv docker/publish/*.config docker/app/
     - mv docker/publish/*.json docker/app/
