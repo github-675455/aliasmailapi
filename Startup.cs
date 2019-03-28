@@ -48,19 +48,15 @@ namespace AliasMailApi
             var mailgunApiDomainEnviroment = Environment.GetEnvironmentVariable("MailgunDomain");
 
             defaultConnection = String.IsNullOrEmpty(defaultConnection) ? Configuration.GetConnectionString("DefaultConnection") : defaultConnection;
-            //mail.vinicius.sl
 
             services.AddDbContextPool<MessageContext>(options => options.UseMySql(defaultConnection));
 
-            if(env.IsDevelopment())
+            services.AddOptions<AppOptions>().Configure(o =>
             {
-                services.AddOptions<AppOptions>().Configure(o =>
-                {
-                    o.mailgunApiToken = mailgunApiTokenEnviroment;
-                    o.consumerToken = consumerToken;
-                    o.mailgunApiDomain = mailgunApiDomainEnviroment;
-                });
-            }
+                o.mailgunApiToken = mailgunApiTokenEnviroment;
+                o.consumerToken = consumerToken;
+                o.mailgunApiDomain = mailgunApiDomainEnviroment;
+            });
 
             services.Configure<AppOptions>(Configuration);
             services.AddSingleton<IMapService, MapService>();
