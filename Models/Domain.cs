@@ -5,7 +5,6 @@ namespace AliasMailApi.Models
 {
     public class Domain
     {
-        [Key]
         public Guid Id { get; set; }
         [StringLength(253)]
         public string Name { get; set; }

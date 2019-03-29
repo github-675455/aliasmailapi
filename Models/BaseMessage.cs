@@ -5,7 +5,6 @@ namespace AliasMailApi.Models
 {
     public class BaseMessage
     {
-        [Key]
         public Guid Id { get; set; }
         public DateTime Created { get; set; }
         public bool Valid { get; set; }

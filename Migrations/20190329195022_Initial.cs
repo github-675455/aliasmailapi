@@ -22,6 +22,34 @@ namespace AliasMailApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Mails",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Created = table.Column<DateTime>(nullable: false),
+                    SenderAddress = table.Column<string>(maxLength: 254, nullable: true),
+                    SenderDisplayName = table.Column<string>(maxLength: 254, nullable: true),
+                    FromAddress = table.Column<string>(maxLength: 254, nullable: true),
+                    FromDisplayName = table.Column<string>(maxLength: 254, nullable: true),
+                    ToAddress = table.Column<string>(maxLength: 254, nullable: true),
+                    ToDisplayName = table.Column<string>(maxLength: 254, nullable: true),
+                    Date = table.Column<DateTime>(nullable: false),
+                    Subject = table.Column<string>(nullable: true),
+                    UserAgent = table.Column<string>(nullable: true),
+                    InReplyTo = table.Column<string>(nullable: true),
+                    MessageId = table.Column<string>(nullable: true),
+                    Received = table.Column<string>(nullable: true),
+                    References = table.Column<string>(nullable: true),
+                    BodyHtml = table.Column<string>(nullable: true),
+                    BodyPlain = table.Column<string>(nullable: true),
+                    Recipient = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Mails", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
@@ -88,10 +116,34 @@ namespace AliasMailApi.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Attachment",
+                columns: table => new
+                {
+                    Name = table.Column<string>(nullable: false),
+                    MailId = table.Column<Guid>(nullable: false),
+                    Data = table.Column<byte[]>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attachment", x => new { x.Name, x.MailId });
+                    table.ForeignKey(
+                        name: "FK_Attachment_Mails_MailId",
+                        column: x => x.MailId,
+                        principalTable: "Mails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Domains",
                 columns: new[] { "Id", "Active", "Description", "Name" },
-                values: new object[] { new Guid("0d2771a6-a09b-4914-b709-3774ce693317"), true, "", "vinicius.sl" });
+                values: new object[] { new Guid("20b55ed3-332b-4d58-af00-790b50eea6fd"), true, "", "vinicius.sl" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attachment_MailId",
+                table: "Attachment",
+                column: "MailId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Mailboxes_DomainId",
@@ -108,10 +160,16 @@ namespace AliasMailApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Attachment");
+
+            migrationBuilder.DropTable(
                 name: "Mailboxes");
 
             migrationBuilder.DropTable(
                 name: "Messages");
+
+            migrationBuilder.DropTable(
+                name: "Mails");
 
             migrationBuilder.DropTable(
                 name: "Domains");

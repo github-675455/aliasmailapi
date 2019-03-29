@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AliasMailApi.Migrations
 {
     [DbContext(typeof(MessageContext))]
-    [Migration("20190329020832_Initial")]
+    [Migration("20190329195022_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -18,6 +18,21 @@ namespace AliasMailApi.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.2.3-servicing-35854")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            modelBuilder.Entity("AliasMailApi.Models.Attachment", b =>
+                {
+                    b.Property<string>("Name");
+
+                    b.Property<Guid>("MailId");
+
+                    b.Property<byte[]>("Data");
+
+                    b.HasKey("Name", "MailId");
+
+                    b.HasIndex("MailId");
+
+                    b.ToTable("Attachment");
+                });
 
             modelBuilder.Entity("AliasMailApi.Models.BaseMessage", b =>
                 {
@@ -67,11 +82,61 @@ namespace AliasMailApi.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("0d2771a6-a09b-4914-b709-3774ce693317"),
+                            Id = new Guid("20b55ed3-332b-4d58-af00-790b50eea6fd"),
                             Active = true,
                             Description = "",
                             Name = "vinicius.sl"
                         });
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.Mail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("BodyHtml");
+
+                    b.Property<string>("BodyPlain");
+
+                    b.Property<DateTime>("Created");
+
+                    b.Property<DateTime>("Date");
+
+                    b.Property<string>("FromAddress")
+                        .HasMaxLength(254);
+
+                    b.Property<string>("FromDisplayName")
+                        .HasMaxLength(254);
+
+                    b.Property<string>("InReplyTo");
+
+                    b.Property<string>("MessageId");
+
+                    b.Property<string>("Received");
+
+                    b.Property<string>("Recipient");
+
+                    b.Property<string>("References");
+
+                    b.Property<string>("SenderAddress")
+                        .HasMaxLength(254);
+
+                    b.Property<string>("SenderDisplayName")
+                        .HasMaxLength(254);
+
+                    b.Property<string>("Subject");
+
+                    b.Property<string>("ToAddress")
+                        .HasMaxLength(254);
+
+                    b.Property<string>("ToDisplayName")
+                        .HasMaxLength(254);
+
+                    b.Property<string>("UserAgent");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Mails");
                 });
 
             modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>
@@ -161,6 +226,14 @@ namespace AliasMailApi.Migrations
                         .IsUnique();
 
                     b.HasDiscriminator().HasValue("MailgunMessage");
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.Attachment", b =>
+                {
+                    b.HasOne("AliasMailApi.Models.Mail", "mail")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>

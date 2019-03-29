@@ -7,8 +7,7 @@ namespace AliasMailApi.Models
 {
     public class Mail
     {
-        [Key]
-        public Guid Id;
+        public Guid Id { get; set; }
         public DateTime Created { get; set; }
         [StringLength(254)]
         public string SenderAddress { get; set; }
