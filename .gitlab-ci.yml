@@ -2,6 +2,9 @@ image: docker:latest
 services:
   - docker:dind
 
+variables:
+  TAG: 'latest'
+
 stages:
   - build
   - publish
