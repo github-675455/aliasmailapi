@@ -18,6 +18,8 @@ using KubeClient;
 using KubeClient.Extensions.Configuration;
 using Newtonsoft.Json;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using AutoMapper;
+using Microsoft.AspNetCore.Http;
 
 namespace AliasMailApi
 {
@@ -30,7 +32,6 @@ namespace AliasMailApi
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             var env = services.BuildServiceProvider().GetRequiredService<IHostingEnvironment>();
@@ -58,8 +59,18 @@ namespace AliasMailApi
                 o.mailgunApiDomain = mailgunApiDomainEnviroment;
             });
 
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
+
             services.Configure<AppOptions>(Configuration);
-            services.AddSingleton<IMapService, MapService>();
+            services.AddTransient<IMessageService, MessageService>();
+            services.AddTransient<IMailboxService, MailboxService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMvcCore().AddJsonOptions(o => {
 #if DEBUG
                 o.SerializerSettings.Formatting = Formatting.Indented;
@@ -72,7 +83,19 @@ namespace AliasMailApi
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, MessageContext context)
         {
+            var dropDatabase = Environment.GetEnvironmentVariable("DropDatabase");
+            if(!string.IsNullOrWhiteSpace(dropDatabase))
+            {
+                context.Database.EnsureDeleted();
+            }
+
             context.Database.Migrate();
+
+            var seedData = Environment.GetEnvironmentVariable("SeedData");
+            if(!string.IsNullOrWhiteSpace(seedData))
+            {
+                context.Database.EnsureCreated();
+            }
 
             if (env.IsDevelopment())
             {

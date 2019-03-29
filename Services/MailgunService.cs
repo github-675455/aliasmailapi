@@ -9,10 +9,10 @@ namespace AliasMailApi.Services
 {
     public class MailgunService : IMailService
     {
-        private readonly IOptions<AppOptions> _options;
+        private readonly AppOptions _options;
         private readonly Uri urlApi = new Uri ("https://api.eu.mailgun.net/v3");
         public MailgunService(IOptions<AppOptions> options){
-            _options = options;
+            _options = options.Value;
         }
         public void send(string from, string to, string subject, string textMessage)
         {
@@ -37,7 +37,7 @@ namespace AliasMailApi.Services
         private RestRequest SetupBasicMail(string from, string to, string subject, string textMessage)
         {
             RestRequest request = new RestRequest();
-            request.AddParameter ("domain", _options.Value.mailgunApiDomain, ParameterType.UrlSegment);
+            request.AddParameter ("domain", _options.mailgunApiDomain, ParameterType.UrlSegment);
             request.Resource = "{domain}/messages";
             request.AddParameter ("from", from);
             request.AddParameter ("to", to);
@@ -51,7 +51,7 @@ namespace AliasMailApi.Services
         {
             RestClient client = new RestClient();
             client.BaseUrl = urlApi;
-            client.Authenticator = new HttpBasicAuthenticator("api",  _options.Value.mailgunApiToken);
+            client.Authenticator = new HttpBasicAuthenticator("api",  _options.mailgunApiToken);
             var response = client.Execute (request);
             System.Console.Out.WriteLine(response.Content.ToString());
         }

@@ -27,7 +27,11 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("Discriminator")
                         .IsRequired();
 
-                    b.Property<string>("Host")
+                    b.Property<bool>("Error");
+
+                    b.Property<string>("ErrorMessage");
+
+                    b.Property<string>("RemoteIpAddress")
                         .HasMaxLength(128);
 
                     b.Property<bool>("Valid");
@@ -41,7 +45,62 @@ namespace AliasMailApi.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("BaseMessage");
                 });
 
-            modelBuilder.Entity("AliasMailApi.Models.MailGunMessage", b =>
+            modelBuilder.Entity("AliasMailApi.Models.Domain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("Active");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2048);
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(253);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Domains");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0d2771a6-a09b-4914-b709-3774ce693317"),
+                            Active = true,
+                            Description = "",
+                            Name = "vinicius.sl"
+                        });
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>
+                {
+                    b.Property<string>("Email")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(512);
+
+                    b.Property<DateTime>("Created");
+
+                    b.Property<bool>("CreatedManually");
+
+                    b.Property<bool>("Delete");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2048);
+
+                    b.Property<Guid>("DomainId");
+
+                    b.Property<bool>("Reject");
+
+                    b.Property<int>("StoreQuantity");
+
+                    b.HasKey("Email");
+
+                    b.HasIndex("DomainId");
+
+                    b.ToTable("Mailboxes");
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.MailgunMessage", b =>
                 {
                     b.HasBaseType("AliasMailApi.Models.BaseMessage");
 
@@ -55,7 +114,7 @@ namespace AliasMailApi.Migrations
 
                     b.Property<string>("ContentType");
 
-                    b.Property<DateTime>("Date");
+                    b.Property<string>("Date");
 
                     b.Property<string>("From");
 
@@ -67,27 +126,11 @@ namespace AliasMailApi.Migrations
 
                     b.Property<string>("MimeVersion");
 
-                    b.Property<string>("OriginalAttachmentCount");
-
-                    b.Property<string>("OriginalDate");
-
-                    b.Property<string>("OriginalFrom");
-
-                    b.Property<string>("OriginalSender");
-
-                    b.Property<string>("OriginalTo");
-
                     b.Property<string>("Received");
 
                     b.Property<string>("Recipient");
 
                     b.Property<string>("References");
-
-                    b.Property<string>("SFrom");
-
-                    b.Property<string>("SSender");
-
-                    b.Property<string>("SSubject");
 
                     b.Property<string>("Sender");
 
@@ -115,7 +158,15 @@ namespace AliasMailApi.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.HasDiscriminator().HasValue("MailGunMessage");
+                    b.HasDiscriminator().HasValue("MailgunMessage");
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>
+                {
+                    b.HasOne("AliasMailApi.Models.Domain", "Domain")
+                        .WithMany()
+                        .HasForeignKey("DomainId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }

@@ -22,30 +22,41 @@ namespace AliasMailApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class WebhookController : ControllerBase
+    public class DomainController : ControllerBase
     {
         private readonly IMessageService _messageService;
-        private readonly IMailboxService _mailboxService;
         private readonly AppOptions _options;
-        private readonly IDistributedCache _cache;
         private readonly MessageContext _context;
 
-        public WebhookController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache, IMailboxService mailboxService) {
+        public DomainController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options) {
             _messageService = messageService;
             _options = options.Value;
             _context = context;
-            _cache = cache;
-            _mailboxService = mailboxService;
         }
         [HttpPost]
-        [AllowAnonymous]
-        public async Task<IActionResult> Post([FromForm]MailgunMessageRequest message)
+        public void Post()
         {
-            var result = await _messageService.create(message);
             
-            _mailboxService.import(result.Data);
+        }
+
+        [HttpPut]
+        public void Put()
+        {
+        }
+
+        [HttpDelete]
+        public void Delete()
+        {
             
-            return Ok(result);
+        }
+        
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
+                return Unauthorized();
+            }
+            return Ok(await _context.Domains.ToListAsync());
         }
     }
 }

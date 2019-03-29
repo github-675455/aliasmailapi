@@ -22,30 +22,45 @@ namespace AliasMailApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class WebhookController : ControllerBase
+    public class MailController : ControllerBase
     {
         private readonly IMessageService _messageService;
-        private readonly IMailboxService _mailboxService;
         private readonly AppOptions _options;
         private readonly IDistributedCache _cache;
         private readonly MessageContext _context;
 
-        public WebhookController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache, IMailboxService mailboxService) {
+        public MailController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache) {
             _messageService = messageService;
             _options = options.Value;
             _context = context;
             _cache = cache;
-            _mailboxService = mailboxService;
         }
         [HttpPost]
-        [AllowAnonymous]
-        public async Task<IActionResult> Post([FromForm]MailgunMessageRequest message)
+        public void Post()
         {
-            var result = await _messageService.create(message);
-            
-            _mailboxService.import(result.Data);
-            
-            return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        public void Put(int id, [FromBody] string value)
+        {
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(MailgunMessageRequest message)
+        {
+            if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
+                return Unauthorized();
+            }
+            return Ok(await _messageService.delete(message));
+        }
+        
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
+                return Unauthorized();
+            }
+            return Ok(await _context.MailgunMessages.ToListAsync());
         }
     }
 }
