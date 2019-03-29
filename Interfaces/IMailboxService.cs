@@ -1,9 +1,10 @@
+using System.Threading.Tasks;
 using AliasMailApi.Models;
 
 namespace AliasMailApi.Interfaces
 {
     public interface IMailboxService
     {
-        void import(BaseMessage message);
+        Task import(BaseMessage message);
     }
 }

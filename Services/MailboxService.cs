@@ -30,7 +30,7 @@ namespace AliasMailApi.Services
             return mail;
         }
 
-        public async void import(BaseMessage message)
+        public async Task import(BaseMessage message)
         {
             if(!message.Valid)
             {

@@ -44,7 +44,7 @@ namespace AliasMailApi.Controllers
         {
             var result = await _messageService.create(message);
             
-            _mailboxService.import(result.Data);
+            await _mailboxService.import(result.Data);
             
             return Ok(result);
         }
