@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using AliasMailApi.Interfaces;
 
 namespace AliasMailApi
 {
@@ -70,7 +71,7 @@ namespace AliasMailApi
             services.Configure<AppOptions>(Configuration);
             services.AddTransient<IMessageService, MessageService>();
             services.AddTransient<IMailboxService, MailboxService>();
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddHttpContextAccessor();
             services.AddMvcCore().AddJsonOptions(o => {
 #if DEBUG
                 o.SerializerSettings.Formatting = Formatting.Indented;

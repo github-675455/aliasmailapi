@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using AliasMailApi.Interfaces;
 
 namespace AliasMailApi.Services
 {

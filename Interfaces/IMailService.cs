@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace AliasMailApi.Services
+namespace AliasMailApi.Interfaces
 {
     interface IMailService
     {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using AliasMailApi.Configuration;
+using AliasMailApi.Interfaces;
 using Microsoft.Extensions.Options;
 using RestSharp;
 using RestSharp.Authenticators;

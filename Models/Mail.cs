@@ -23,6 +23,7 @@ namespace AliasMailApi.Models
         public string ToDisplayName { get; set; }
         public DateTime Date { get; set; }
         public string Subject { get; set; }
+        [StringLength(4096)]
         public string UserAgent { get; set; }
         public string InReplyTo { get; set; }
         public string MessageId { get; set; }

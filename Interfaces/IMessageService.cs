@@ -4,7 +4,7 @@ using AliasMailApi.Models;
 using AliasMailApi.Models.DTO;
 using Microsoft.AspNetCore.Http;
 
-namespace AliasMailApi.Services
+namespace AliasMailApi.Interfaces
 {
     public interface IMessageService
     {

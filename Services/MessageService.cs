@@ -16,6 +16,7 @@ using AutoMapper;
 using AliasMailApi.Models.DTO;
 using AliasMailApi.Extensions;
 using System.Collections.Generic;
+using AliasMailApi.Interfaces;
 
 namespace AliasMailApi.Services
 {

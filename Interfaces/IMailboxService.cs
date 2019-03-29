@@ -1,6 +1,6 @@
 using AliasMailApi.Models;
 
-namespace AliasMailApi.Services
+namespace AliasMailApi.Interfaces
 {
     public interface IMailboxService
     {

@@ -1,4 +1,4 @@
-namespace AliasMailApi.Services
+namespace AliasMailApi.Interfaces
 {
     public interface ISecurityService
     {

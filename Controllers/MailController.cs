@@ -17,6 +17,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using AliasMailApi.Models.DTO;
+using AliasMailApi.Interfaces;
 
 namespace AliasMailApi.Controllers
 {

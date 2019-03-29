@@ -4,6 +4,7 @@ using AliasMailApi.Models;
 using AliasMailApi.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using AliasMailApi.Interfaces;
 
 namespace AliasMailApi.Services
 {
@@ -23,9 +24,10 @@ namespace AliasMailApi.Services
         public async Task<Mailbox> GetMailbox(string email){
             return await _context.Mailboxes.FirstOrDefaultAsync(e => e.Email == email);
         }
-        public async void CreateMailbox(Mailbox mail){
+        public async Task<Mailbox> CreateMailbox(Mailbox mail){
             await _context.Mailboxes.AddAsync(mail);
             await _context.SaveChangesAsync();
+            return mail;
         }
 
         public async void import(BaseMessage message)
@@ -57,8 +59,13 @@ namespace AliasMailApi.Services
                         DomainId = domainFound.Id,
                         Domain = domainFound
                     };
-                    CreateMailbox(newMailbox);
+                    mailboxFound = await CreateMailbox(newMailbox);
                 }
+
+                var mail = new Mail();
+
+                //await _context.Mails.AddAsync();
+
             }
         }
     }
