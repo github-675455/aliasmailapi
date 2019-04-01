@@ -110,6 +110,8 @@ namespace AliasMailApi.Migrations
                     Received = table.Column<string>(nullable: true),
                     References = table.Column<string>(nullable: true),
                     Attachments = table.Column<string>(nullable: true),
+                    MailAttachmentsJobStatus = table.Column<string>(unicode: false, maxLength: 32, nullable: false),
+                    MailAttachmentsJobErrorMessage = table.Column<string>(maxLength: 4096, nullable: true),
                     BodyHtml = table.Column<string>(nullable: true),
                     BodyPlain = table.Column<string>(nullable: true),
                     Recipient = table.Column<string>(nullable: true),
@@ -152,7 +154,7 @@ namespace AliasMailApi.Migrations
             migrationBuilder.InsertData(
                 table: "Domains",
                 columns: new[] { "Id", "Active", "Description", "Name" },
-                values: new object[] { new Guid("f3e5673a-01f8-42cf-b503-a14dffc6f433"), true, "", "vinicius.sl" });
+                values: new object[] { new Guid("f49c0b55-451c-4955-a25a-a9a19f8e039f"), true, "", "vinicius.sl" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_MailAttachments_MailId",

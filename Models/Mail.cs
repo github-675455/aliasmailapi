@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using AliasMailApi.Models.Enum;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AliasMailApi.Models
@@ -32,6 +33,10 @@ namespace AliasMailApi.Models
         public string References { get; set; }
         public string Attachments { get; set; }
         public List<MailAttachment> MailAttachments { get; set; }
+        [StringLength(32)]
+        public JobStats MailAttachmentsJobStatus { get; set; }
+        [StringLength(4096)]
+        public string MailAttachmentsJobErrorMessage { get; set; }
         public string BodyHtml { get; set; }
         public string BodyPlain { get; set; }
         public string Recipient { get; set; }
@@ -41,6 +46,7 @@ namespace AliasMailApi.Models
         public Mail()
         {
             this.Created = DateTime.Now;
+            this.MailAttachmentsJobStatus = JobStats.Pending;
         }
     }
 }

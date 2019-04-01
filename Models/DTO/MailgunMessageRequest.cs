@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
@@ -7,6 +8,8 @@ namespace AliasMailApi.Models.DTO
     {
         [BindNever]
         public string RemoteIpAddress { get; set; }
+        [BindNever]
+        public Guid Id { get; set; }
 
         [FromForm(Name="Content-Type")]
         public string ContentType { get; set; }

@@ -9,6 +9,8 @@ using AutoMapper;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using System;
+using AliasMailApi.Extensions;
 
 namespace AliasMailApi.Services
 {
@@ -66,7 +68,8 @@ namespace AliasMailApi.Services
 
                 var mailboxFound = await GetMailbox(toEmail.Address);
                 
-                if(mailboxFound == null){
+                if(mailboxFound == null)
+                {
                     var newMailbox = new Mailbox{
                         Email = toEmail.Address,
                         StoreQuantity = 1,
@@ -78,37 +81,48 @@ namespace AliasMailApi.Services
                 }
 
                 try{
+
+                    var mailFound = await _context.Mails.FirstOrDefaultAsync(e => e.BaseMessageId == mailgunMessage.Id);
+
+                    if(mailFound != null)
+                    {
+                        return;
+                    }
                     
                     var mail = _mapper.Map<Mail>(mailgunMessage);
 
                     using(var transaction = _context.Database.BeginTransaction())
                     {
                         await _context.Mails.AddAsync(mail);
-                        await _context.SaveChangesAsync(); 
-
-                        var jsonAttachments = mail.Attachments.Replace("\\\"", "\"");
-
-                        var attachments = JsonConvert.DeserializeObject<MailAttachment[]>(jsonAttachments);
-
-                        ICollection<Task<MailAttachment>> getFiles = new List<Task<MailAttachment>>();
-
-                        attachments.ToList().ForEach(e => {
-                            getFiles.Add(_mailgunAttachment.get(e));
-                            e.MailId = mail.Id;
-                        });
-
-                        await Task.WhenAll(getFiles.ToArray());
-
-                        getFiles.ToList().ForEach(async attachment => await _context.MailAttachments.AddAsync(attachment.Result));
-
                         await _context.SaveChangesAsync();
+
+                        if(mail.Attachments.NotEmpty())
+                        {
+                            var jsonAttachments = mail.Attachments.Replace("\\\"", "\"");
+                            var attachments = JsonConvert.DeserializeObject<MailAttachment[]>(jsonAttachments);
+                            ICollection<Task<MailAttachment>> getFiles = new List<Task<MailAttachment>>();
+
+                            attachments.ToList().ForEach(e => {
+                                getFiles.Add(_mailgunAttachment.get(e));
+                                e.MailId = mail.Id;
+                                e.url = string.Empty;
+                            });
+                            await Task.WhenAll(getFiles.ToArray());
+
+                            getFiles.ToList().ForEach(async attachment => await _context.MailAttachments.AddAsync(attachment.Result));
+
+                            await _context.SaveChangesAsync();
+                        }
+                        
                         transaction.Commit();
                     }
                 }
-                catch(AutoMapperMappingException autoMapperException)
+                catch(Exception exception)
                 {
                     mailgunMessage.Error = true;
-                    mailgunMessage.ErrorMessage = autoMapperException.InnerException.Message;
+                    mailgunMessage.ErrorMessage = string.Format("{0} - {1}",exception.Message, exception.StackTrace).Substring(0, 4096);
+                    _context.MailgunMessages.Update(mailgunMessage);
+                    await _context.SaveChangesAsync();
                 }
             }
         }

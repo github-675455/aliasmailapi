@@ -1,5 +1,6 @@
 using System;
 using AliasMailApi.Models;
+using AliasMailApi.Models.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace AliasMailApi.Repository
@@ -18,9 +19,19 @@ namespace AliasMailApi.Repository
         {
             builder.Entity<MailgunMessage>()
             .HasIndex(c => c.Token).IsUnique();
-            builder.Entity<Domain>().HasData(new Domain{ Id = Guid.NewGuid(), Name = "vinicius.sl", Description = "", Active = true });
+
+            builder.Entity<Domain>()
+            .HasData(new Domain{ Id = new Guid("f49c0b55-451c-4955-a25a-a9a19f8e039f"), Name = "vinicius.sl", Description = "", Active = true });
+
             builder.Entity<MailAttachment>()
             .HasKey(a => new { a.Name, a.MailId });
+            
+            builder.Entity<Mail>()
+            .Property(s => s.MailAttachmentsJobStatus)
+            .HasConversion(
+                v => v.ToString(),
+                v => (JobStats)Enum.Parse(typeof(JobStats),v))
+                .IsUnicode(false);
         }
     }
 }

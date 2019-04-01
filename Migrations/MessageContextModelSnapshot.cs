@@ -65,7 +65,7 @@ namespace AliasMailApi.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f3e5673a-01f8-42cf-b503-a14dffc6f433"),
+                            Id = new Guid("f49c0b55-451c-4955-a25a-a9a19f8e039f"),
                             Active = true,
                             Description = "",
                             Name = "vinicius.sl"
@@ -96,6 +96,14 @@ namespace AliasMailApi.Migrations
                         .HasMaxLength(254);
 
                     b.Property<string>("InReplyTo");
+
+                    b.Property<string>("MailAttachmentsJobErrorMessage")
+                        .HasMaxLength(4096);
+
+                    b.Property<string>("MailAttachmentsJobStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false);
 
                     b.Property<string>("MessageId");
 
