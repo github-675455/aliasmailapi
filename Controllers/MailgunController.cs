@@ -23,36 +23,18 @@ namespace AliasMailApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MailController : ControllerBase
+    public class MailgunController : ControllerBase
     {
         private readonly IMessageService _messageService;
         private readonly AppOptions _options;
         private readonly IDistributedCache _cache;
         private readonly MessageContext _context;
 
-        public MailController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache) {
+        public MailgunController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache) {
             _messageService = messageService;
             _options = options.Value;
             _context = context;
             _cache = cache;
-        }
-        [HttpPost]
-        public void Post()
-        {
-        }
-
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        [HttpDelete]
-        public async Task<IActionResult> Delete(MailgunMessageRequest message)
-        {
-            if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
-                return Unauthorized();
-            }
-            return Ok(await _messageService.delete(message));
         }
         
         [HttpGet]
@@ -61,7 +43,7 @@ namespace AliasMailApi.Controllers
             if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
                 return Unauthorized();
             }
-            return Ok(await _context.Mails.ToListAsync());
+            return Ok(await _context.MailgunMessages.ToListAsync());
         }
     }
 }

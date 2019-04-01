@@ -22,34 +22,6 @@ namespace AliasMailApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Mails",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(nullable: false),
-                    Created = table.Column<DateTime>(nullable: false),
-                    SenderAddress = table.Column<string>(maxLength: 254, nullable: true),
-                    SenderDisplayName = table.Column<string>(maxLength: 254, nullable: true),
-                    FromAddress = table.Column<string>(maxLength: 254, nullable: true),
-                    FromDisplayName = table.Column<string>(maxLength: 254, nullable: true),
-                    ToAddress = table.Column<string>(maxLength: 254, nullable: true),
-                    ToDisplayName = table.Column<string>(maxLength: 254, nullable: true),
-                    Date = table.Column<DateTime>(nullable: false),
-                    Subject = table.Column<string>(nullable: true),
-                    UserAgent = table.Column<string>(nullable: true),
-                    InReplyTo = table.Column<string>(nullable: true),
-                    MessageId = table.Column<string>(nullable: true),
-                    Received = table.Column<string>(nullable: true),
-                    References = table.Column<string>(nullable: true),
-                    BodyHtml = table.Column<string>(nullable: true),
-                    BodyPlain = table.Column<string>(nullable: true),
-                    Recipient = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Mails", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
@@ -74,6 +46,7 @@ namespace AliasMailApi.Migrations
                     To = table.Column<string>(nullable: true),
                     UserAgent = table.Column<string>(nullable: true),
                     XMailgunVariables = table.Column<string>(nullable: true),
+                    Attachments = table.Column<string>(nullable: true),
                     AttachmentCount = table.Column<int>(nullable: true),
                     BodyHtml = table.Column<string>(nullable: true),
                     BodyPlain = table.Column<string>(nullable: true),
@@ -117,6 +90,44 @@ namespace AliasMailApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Mails",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    Created = table.Column<DateTimeOffset>(nullable: false),
+                    SenderAddress = table.Column<string>(maxLength: 254, nullable: true),
+                    SenderDisplayName = table.Column<string>(maxLength: 254, nullable: true),
+                    FromAddress = table.Column<string>(maxLength: 254, nullable: true),
+                    FromDisplayName = table.Column<string>(maxLength: 254, nullable: true),
+                    ToAddress = table.Column<string>(maxLength: 254, nullable: true),
+                    ToDisplayName = table.Column<string>(maxLength: 254, nullable: true),
+                    Date = table.Column<DateTimeOffset>(nullable: false),
+                    OriginalDate = table.Column<string>(nullable: true),
+                    Subject = table.Column<string>(nullable: true),
+                    UserAgent = table.Column<string>(maxLength: 4096, nullable: true),
+                    InReplyTo = table.Column<string>(nullable: true),
+                    MessageId = table.Column<string>(nullable: true),
+                    Received = table.Column<string>(nullable: true),
+                    References = table.Column<string>(nullable: true),
+                    Attachments = table.Column<string>(nullable: true),
+                    BodyHtml = table.Column<string>(nullable: true),
+                    BodyPlain = table.Column<string>(nullable: true),
+                    Recipient = table.Column<string>(nullable: true),
+                    remoteIpAddress = table.Column<string>(nullable: true),
+                    BaseMessageId = table.Column<Guid>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Mails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Mails_Messages_BaseMessageId",
+                        column: x => x.BaseMessageId,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Attachment",
                 columns: table => new
                 {
@@ -138,7 +149,7 @@ namespace AliasMailApi.Migrations
             migrationBuilder.InsertData(
                 table: "Domains",
                 columns: new[] { "Id", "Active", "Description", "Name" },
-                values: new object[] { new Guid("20b55ed3-332b-4d58-af00-790b50eea6fd"), true, "", "vinicius.sl" });
+                values: new object[] { new Guid("1b349c6a-7220-428d-82fc-f56a04d3bf8e"), true, "", "vinicius.sl" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attachment_MailId",
@@ -149,6 +160,11 @@ namespace AliasMailApi.Migrations
                 name: "IX_Mailboxes_DomainId",
                 table: "Mailboxes",
                 column: "DomainId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Mails_BaseMessageId",
+                table: "Mails",
+                column: "BaseMessageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_Token",
@@ -166,13 +182,13 @@ namespace AliasMailApi.Migrations
                 name: "Mailboxes");
 
             migrationBuilder.DropTable(
-                name: "Messages");
-
-            migrationBuilder.DropTable(
                 name: "Mails");
 
             migrationBuilder.DropTable(
                 name: "Domains");
+
+            migrationBuilder.DropTable(
+                name: "Messages");
         }
     }
 }

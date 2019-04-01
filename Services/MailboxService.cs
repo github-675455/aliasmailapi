@@ -5,6 +5,7 @@ using AliasMailApi.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using AliasMailApi.Interfaces;
+using AutoMapper;
 
 namespace AliasMailApi.Services
 {
@@ -12,10 +13,12 @@ namespace AliasMailApi.Services
     {
         private readonly MessageContext _context;
         private readonly IMessageService _messageService;
-        public MailboxService(MessageContext context, IMessageService messageService)
+        private readonly IMapper _mapper;
+        public MailboxService(MessageContext context, IMessageService messageService, IMapper mapper)
         {
             _context = context;
             _messageService = messageService;
+            _mapper = mapper;
         }
 
         public async Task<Domain> GetDomain(string domain){
@@ -32,6 +35,10 @@ namespace AliasMailApi.Services
 
         public async Task import(BaseMessage message)
         {
+            if(message == null){
+                return;
+            }
+
             if(!message.Valid)
             {
                 return;
@@ -62,10 +69,18 @@ namespace AliasMailApi.Services
                     mailboxFound = await CreateMailbox(newMailbox);
                 }
 
-                var mail = new Mail();
+                try{
+                    
+                    var mail = _mapper.Map<Mail>(mailgunMessage);
 
-                //await _context.Mails.AddAsync();
-
+                    await _context.Mails.AddAsync(mail);
+                    await _context.SaveChangesAsync();
+                }
+                catch(AutoMapperMappingException autoMapperException)
+                {
+                    mailgunMessage.Error = true;
+                    mailgunMessage.ErrorMessage = autoMapperException.InnerException.Message;
+                }
             }
         }
     }

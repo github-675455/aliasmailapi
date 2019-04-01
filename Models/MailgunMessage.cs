@@ -19,6 +19,7 @@ namespace AliasMailApi.Models
         public string To { get; set; }
         public string UserAgent { get; set; }
         public string XMailgunVariables { get; set; }
+        public string Attachments { get; set; }
         public int AttachmentCount { get; set; }
         public string BodyHtml { get; set; }
         public string BodyPlain { get; set; }

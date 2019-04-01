@@ -80,7 +80,7 @@ namespace AliasMailApi.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("20b55ed3-332b-4d58-af00-790b50eea6fd"),
+                            Id = new Guid("1b349c6a-7220-428d-82fc-f56a04d3bf8e"),
                             Active = true,
                             Description = "",
                             Name = "vinicius.sl"
@@ -92,13 +92,17 @@ namespace AliasMailApi.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<string>("Attachments");
+
+                    b.Property<Guid?>("BaseMessageId");
+
                     b.Property<string>("BodyHtml");
 
                     b.Property<string>("BodyPlain");
 
-                    b.Property<DateTime>("Created");
+                    b.Property<DateTimeOffset>("Created");
 
-                    b.Property<DateTime>("Date");
+                    b.Property<DateTimeOffset>("Date");
 
                     b.Property<string>("FromAddress")
                         .HasMaxLength(254);
@@ -109,6 +113,8 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("InReplyTo");
 
                     b.Property<string>("MessageId");
+
+                    b.Property<string>("OriginalDate");
 
                     b.Property<string>("Received");
 
@@ -130,9 +136,14 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("ToDisplayName")
                         .HasMaxLength(254);
 
-                    b.Property<string>("UserAgent");
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(4096);
+
+                    b.Property<string>("remoteIpAddress");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BaseMessageId");
 
                     b.ToTable("Mails");
                 });
@@ -170,6 +181,8 @@ namespace AliasMailApi.Migrations
                     b.HasBaseType("AliasMailApi.Models.BaseMessage");
 
                     b.Property<int>("AttachmentCount");
+
+                    b.Property<string>("Attachments");
 
                     b.Property<string>("BodyHtml");
 
@@ -229,9 +242,16 @@ namespace AliasMailApi.Migrations
             modelBuilder.Entity("AliasMailApi.Models.Attachment", b =>
                 {
                     b.HasOne("AliasMailApi.Models.Mail", "mail")
-                        .WithMany("Attachments")
+                        .WithMany()
                         .HasForeignKey("MailId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.Mail", b =>
+                {
+                    b.HasOne("AliasMailApi.Models.BaseMessage", "BaseMessage")
+                        .WithMany()
+                        .HasForeignKey("BaseMessageId");
                 });
 
             modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>

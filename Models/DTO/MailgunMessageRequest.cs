@@ -36,6 +36,8 @@ namespace AliasMailApi.Models.DTO
         public string XMailgunVariables { get; set; }
         [FromForm(Name="attachment-count")]
         public int AttachmentCount { get; set; }
+        [FromForm(Name="attachments")]
+        public int Attachments { get; set; }
         [FromForm(Name="body-html")]
         public string BodyHtml { get; set; }
         [FromForm(Name="body-plain")]
