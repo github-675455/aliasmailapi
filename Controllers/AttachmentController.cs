@@ -23,24 +23,25 @@ namespace AliasMailApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DomainController : ControllerBase
+    public class AttachmentController : ControllerBase
     {
         private readonly IMessageService _messageService;
         private readonly AppOptions _options;
         private readonly MessageContext _context;
 
-        public DomainController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options) {
+        public AttachmentController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options) {
             _messageService = messageService;
             _options = options.Value;
             _context = context;
         }
+        
         [HttpGet]
         public async Task<IActionResult> Get()
         {
             if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
                 return Unauthorized();
             }
-            return Ok(await _context.Domains.ToListAsync());
+            return Ok(await _context.MailAttachments.ToListAsync());
         }
     }
 }

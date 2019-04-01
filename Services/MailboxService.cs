@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using AliasMailApi.Interfaces;
 using AutoMapper;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace AliasMailApi.Services
 {
@@ -14,11 +17,16 @@ namespace AliasMailApi.Services
         private readonly MessageContext _context;
         private readonly IMessageService _messageService;
         private readonly IMapper _mapper;
-        public MailboxService(MessageContext context, IMessageService messageService, IMapper mapper)
-        {
+        private readonly IMailgunAttachment _mailgunAttachment;
+        public MailboxService(
+            MessageContext context,
+            IMessageService messageService,
+            IMapper mapper,
+            IMailgunAttachment mailgunAttachment){
             _context = context;
             _messageService = messageService;
             _mapper = mapper;
+            _mailgunAttachment = mailgunAttachment;
         }
 
         public async Task<Domain> GetDomain(string domain){
@@ -73,8 +81,29 @@ namespace AliasMailApi.Services
                     
                     var mail = _mapper.Map<Mail>(mailgunMessage);
 
-                    await _context.Mails.AddAsync(mail);
-                    await _context.SaveChangesAsync();
+                    using(var transaction = _context.Database.BeginTransaction())
+                    {
+                        await _context.Mails.AddAsync(mail);
+                        await _context.SaveChangesAsync(); 
+
+                        var jsonAttachments = mail.Attachments.Replace("\\\"", "\"");
+
+                        var attachments = JsonConvert.DeserializeObject<MailAttachment[]>(jsonAttachments);
+
+                        ICollection<Task<MailAttachment>> getFiles = new List<Task<MailAttachment>>();
+
+                        attachments.ToList().ForEach(e => {
+                            getFiles.Add(_mailgunAttachment.get(e));
+                            e.MailId = mail.Id;
+                        });
+
+                        await Task.WhenAll(getFiles.ToArray());
+
+                        getFiles.ToList().ForEach(async attachment => await _context.MailAttachments.AddAsync(attachment.Result));
+
+                        await _context.SaveChangesAsync();
+                        transaction.Commit();
+                    }
                 }
                 catch(AutoMapperMappingException autoMapperException)
                 {

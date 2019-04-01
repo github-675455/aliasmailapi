@@ -13,12 +13,13 @@ namespace AliasMailApi.Repository
         public DbSet<Mailbox> Mailboxes { get; set; }
         public DbSet<Domain> Domains { get; set; }
         public DbSet<Mail> Mails { get; set; }
+        public DbSet<MailAttachment> MailAttachments { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<MailgunMessage>()
             .HasIndex(c => c.Token).IsUnique();
             builder.Entity<Domain>().HasData(new Domain{ Id = Guid.NewGuid(), Name = "vinicius.sl", Description = "", Active = true });
-            builder.Entity<Attachment>()
+            builder.Entity<MailAttachment>()
             .HasKey(a => new { a.Name, a.MailId });
         }
     }

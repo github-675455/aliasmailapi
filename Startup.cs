@@ -71,6 +71,7 @@ namespace AliasMailApi
             services.Configure<AppOptions>(Configuration);
             services.AddTransient<IMessageService, MessageService>();
             services.AddTransient<IMailboxService, MailboxService>();
+            services.AddTransient<IMailgunAttachment, MailgunAttachmentService>();
             services.AddHttpContextAccessor();
             services.AddMvcCore().AddJsonOptions(o => {
 #if DEBUG

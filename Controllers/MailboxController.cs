@@ -34,22 +34,6 @@ namespace AliasMailApi.Controllers
             _options = options.Value;
             _context = context;
         }
-        [HttpPost]
-        public void Post()
-        {
-            
-        }
-
-        [HttpPut]
-        public void Put()
-        {
-        }
-
-        [HttpDelete]
-        public void Delete()
-        {
-            
-        }
         
         [HttpGet]
         public async Task<IActionResult> Get()

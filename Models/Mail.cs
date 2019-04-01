@@ -31,6 +31,7 @@ namespace AliasMailApi.Models
         public string Received { get; set; }
         public string References { get; set; }
         public string Attachments { get; set; }
+        public List<MailAttachment> MailAttachments { get; set; }
         public string BodyHtml { get; set; }
         public string BodyPlain { get; set; }
         public string Recipient { get; set; }

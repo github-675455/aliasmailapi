@@ -61,7 +61,7 @@ namespace AliasMailApi.Controllers
             if(HttpContext.Request.Headers["Authorization"] != _options.consumerToken){
                 return Unauthorized();
             }
-            return Ok(await _context.Mails.ToListAsync());
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).ToListAsync());
         }
     }
 }

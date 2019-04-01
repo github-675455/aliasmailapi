@@ -17,21 +17,6 @@ namespace AliasMailApi.Migrations
                 .HasAnnotation("ProductVersion", "2.2.3-servicing-35854")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("AliasMailApi.Models.Attachment", b =>
-                {
-                    b.Property<string>("Name");
-
-                    b.Property<Guid>("MailId");
-
-                    b.Property<byte[]>("Data");
-
-                    b.HasKey("Name", "MailId");
-
-                    b.HasIndex("MailId");
-
-                    b.ToTable("Attachment");
-                });
-
             modelBuilder.Entity("AliasMailApi.Models.BaseMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -80,7 +65,7 @@ namespace AliasMailApi.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f520a6e9-927e-4f2d-99d7-04bcd7014a0b"),
+                            Id = new Guid("f3e5673a-01f8-42cf-b503-a14dffc6f433"),
                             Active = true,
                             Description = "",
                             Name = "vinicius.sl"
@@ -146,6 +131,27 @@ namespace AliasMailApi.Migrations
                     b.HasIndex("BaseMessageId");
 
                     b.ToTable("Mails");
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.MailAttachment", b =>
+                {
+                    b.Property<string>("Name");
+
+                    b.Property<Guid>("MailId");
+
+                    b.Property<string>("ContentType");
+
+                    b.Property<byte[]>("Data");
+
+                    b.Property<long>("Size");
+
+                    b.Property<string>("url");
+
+                    b.HasKey("Name", "MailId");
+
+                    b.HasIndex("MailId");
+
+                    b.ToTable("MailAttachments");
                 });
 
             modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>
@@ -239,19 +245,19 @@ namespace AliasMailApi.Migrations
                     b.HasDiscriminator().HasValue("MailgunMessage");
                 });
 
-            modelBuilder.Entity("AliasMailApi.Models.Attachment", b =>
-                {
-                    b.HasOne("AliasMailApi.Models.Mail", "mail")
-                        .WithMany()
-                        .HasForeignKey("MailId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("AliasMailApi.Models.Mail", b =>
                 {
                     b.HasOne("AliasMailApi.Models.BaseMessage", "BaseMessage")
                         .WithMany()
                         .HasForeignKey("BaseMessageId");
+                });
+
+            modelBuilder.Entity("AliasMailApi.Models.MailAttachment", b =>
+                {
+                    b.HasOne("AliasMailApi.Models.Mail", "mail")
+                        .WithMany("MailAttachments")
+                        .HasForeignKey("MailId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("AliasMailApi.Models.Mailbox", b =>

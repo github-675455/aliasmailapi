@@ -128,18 +128,21 @@ namespace AliasMailApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Attachment",
+                name: "MailAttachments",
                 columns: table => new
                 {
                     Name = table.Column<string>(nullable: false),
                     MailId = table.Column<Guid>(nullable: false),
-                    Data = table.Column<byte[]>(nullable: true)
+                    Data = table.Column<byte[]>(nullable: true),
+                    Size = table.Column<long>(nullable: false),
+                    ContentType = table.Column<string>(nullable: true),
+                    url = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Attachment", x => new { x.Name, x.MailId });
+                    table.PrimaryKey("PK_MailAttachments", x => new { x.Name, x.MailId });
                     table.ForeignKey(
-                        name: "FK_Attachment_Mails_MailId",
+                        name: "FK_MailAttachments_Mails_MailId",
                         column: x => x.MailId,
                         principalTable: "Mails",
                         principalColumn: "Id",
@@ -149,11 +152,11 @@ namespace AliasMailApi.Migrations
             migrationBuilder.InsertData(
                 table: "Domains",
                 columns: new[] { "Id", "Active", "Description", "Name" },
-                values: new object[] { new Guid("f520a6e9-927e-4f2d-99d7-04bcd7014a0b"), true, "", "vinicius.sl" });
+                values: new object[] { new Guid("f3e5673a-01f8-42cf-b503-a14dffc6f433"), true, "", "vinicius.sl" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attachment_MailId",
-                table: "Attachment",
+                name: "IX_MailAttachments_MailId",
+                table: "MailAttachments",
                 column: "MailId");
 
             migrationBuilder.CreateIndex(
@@ -176,7 +179,7 @@ namespace AliasMailApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Attachment");
+                name: "MailAttachments");
 
             migrationBuilder.DropTable(
                 name: "Mailboxes");
