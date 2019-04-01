@@ -149,7 +149,7 @@ namespace AliasMailApi.Migrations
             migrationBuilder.InsertData(
                 table: "Domains",
                 columns: new[] { "Id", "Active", "Description", "Name" },
-                values: new object[] { new Guid("1b349c6a-7220-428d-82fc-f56a04d3bf8e"), true, "", "vinicius.sl" });
+                values: new object[] { new Guid("f520a6e9-927e-4f2d-99d7-04bcd7014a0b"), true, "", "vinicius.sl" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attachment_MailId",

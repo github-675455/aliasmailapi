@@ -80,7 +80,7 @@ namespace AliasMailApi.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("1b349c6a-7220-428d-82fc-f56a04d3bf8e"),
+                            Id = new Guid("f520a6e9-927e-4f2d-99d7-04bcd7014a0b"),
                             Active = true,
                             Description = "",
                             Name = "vinicius.sl"

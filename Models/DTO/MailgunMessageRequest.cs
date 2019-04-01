@@ -37,7 +37,7 @@ namespace AliasMailApi.Models.DTO
         [FromForm(Name="attachment-count")]
         public int AttachmentCount { get; set; }
         [FromForm(Name="attachments")]
-        public int Attachments { get; set; }
+        public string Attachments { get; set; }
         [FromForm(Name="body-html")]
         public string BodyHtml { get; set; }
         [FromForm(Name="body-plain")]
