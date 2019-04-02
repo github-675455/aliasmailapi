@@ -33,9 +33,6 @@ develop_build:
   stage: publish
   script:
     - mkdir docker/app/
-    - ls -l
-    - ls -l docker/app/
-    - ls -l docker/publish/
     - export DOCKER_HOST=$DOCKER_PORT
     - mv docker/publish/$ASSEMBLY_NAME.* docker/app/
     - mv docker/publish/*.config docker/app/
@@ -53,4 +50,4 @@ develop_docker:
     - develop_build
   variables:
     ASSEMBLY_NAME: AliasMailApi
-    TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_PIPELINE_ID
+    TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
