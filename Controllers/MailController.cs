@@ -26,27 +26,29 @@ namespace AliasMailApi.Controllers
     public class MailController : ControllerBase
     {
         private readonly IMessageService _messageService;
-        private readonly IMailboxService _mailboxService;
+        private readonly IMailService _mailService;
         private readonly AppOptions _options;
-        private readonly IDistributedCache _cache;
         private readonly MessageContext _context;
 
         public MailController(
             MessageContext context,
             IMessageService messageService,
-            IMailboxService mailboxService,
-            IOptions<AppOptions> options,
-            IDistributedCache cache)
+            IMailService mailService,
+            IOptions<AppOptions> options)
         {
             _messageService = messageService;
-            _mailboxService = mailboxService;
+            _mailService = mailService;
             _options = options.Value;
             _context = context;
-            _cache = cache;
         }
         [HttpPost("import")]
         public async Task<IActionResult> ImportAsync([FromBody] MailRequest mail)
         {
+            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
+            {
+                return Unauthorized();
+            }
+
             var response = await _messageService.get(mail.Id);
 
             if (!response.Success)
@@ -56,14 +58,7 @@ namespace AliasMailApi.Controllers
 
             var messageFound = response.Data;
 
-            await _mailboxService.import(messageFound);
-
-            return Ok();
-        }
-
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
+            return Ok(await _mailService.import(messageFound));
         }
 
         [HttpDelete]
@@ -78,6 +73,16 @@ namespace AliasMailApi.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Get()
+        {
+            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
+            {
+                return Unauthorized();
+            }
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).ToListAsync());
+        }
+
+        [HttpGet("/simple")]
+        public async Task<IActionResult> GetSimple()
         {
             if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
             {

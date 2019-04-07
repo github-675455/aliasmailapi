@@ -32,7 +32,7 @@ namespace AliasMailApi.Models
         public string StrippedText { get; set; }
         public string Timestamp { get; set; }
         
-        [StringLength(50)]
+        [MaxLength(50)]
         public string Token { get; set; }
 
     }

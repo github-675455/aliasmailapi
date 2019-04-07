@@ -1,12 +1,11 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using AliasMailApi.Models;
 
 namespace AliasMailApi.Interfaces
 {
-    interface IMailService
+    public interface IMailService
     {
-        void send(string from, string to, string subject, string textMessage);
-        void send(string from, string to, string subject, string textMessage, string htmlMessage);
-        void send(string from, string to, string subject, string textMessage, string htmlMessage, List<string> attachments);
-        void send(string from, string to, string subject, string cc, string bcc, string textMessage, string htmlMessage, List<string> attachments);
+        Task<BaseResponse<BaseMessage>> import(BaseMessage message);
     }
 }

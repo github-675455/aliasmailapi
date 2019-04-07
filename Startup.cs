@@ -21,6 +21,7 @@ using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using AliasMailApi.Interfaces;
+using AliasMailApi.Jobs;
 
 namespace AliasMailApi
 {
@@ -70,8 +71,11 @@ namespace AliasMailApi
 
             services.Configure<AppOptions>(Configuration);
             services.AddTransient<IMessageService, MessageService>();
+            services.AddTransient<IDomainService, DomainService>();
             services.AddTransient<IMailboxService, MailboxService>();
+            services.AddTransient<IMailService, MailService>();
             services.AddTransient<IMailgunAttachment, MailgunAttachmentService>();
+            services.AddHostedService<MailImportJob>();
             services.AddHttpContextAccessor();
             services.AddMvcCore().AddJsonOptions(o => {
 #if DEBUG

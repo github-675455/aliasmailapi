@@ -2,6 +2,7 @@ using System;
 using System.Net.Mail;
 using AliasMailApi.Models;
 using AliasMailApi.Models.DTO;
+using AliasMailApi.Models.Enum;
 using AutoMapper;
 
 namespace AliasMailApi.Configuration
@@ -21,7 +22,8 @@ namespace AliasMailApi.Configuration
             .ForMember(e => e.FromAddress, opt => opt.MapFrom(src => new MailAddress(src.From).Address))
             .ForMember(e => e.FromDisplayName, opt => opt.MapFrom(src => new MailAddress(src.From).DisplayName))
             .ForMember(e => e.SenderAddress, opt => opt.MapFrom(src => new MailAddress(src.Sender).Address))
-            .ForMember(e => e.SenderDisplayName, opt => opt.MapFrom(src => new MailAddress(src.Sender).DisplayName));
+            .ForMember(e => e.SenderDisplayName, opt => opt.MapFrom(src => new MailAddress(src.Sender).DisplayName))
+            .ForMember(e => e.Source, opt => opt.MapFrom( o => DataSource.Mailgun));
         }
     }
 }

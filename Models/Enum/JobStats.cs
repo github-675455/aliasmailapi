@@ -5,6 +5,7 @@ namespace AliasMailApi.Models.Enum
         Pending,
         Processing,
         Stuck,
-        Error
+        Error,
+        Done
     }
 }

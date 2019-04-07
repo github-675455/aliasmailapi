@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net.Http.Formatting;
 using System.Threading.Tasks;
 using AliasMailApi.Models;
@@ -12,5 +13,6 @@ namespace AliasMailApi.Interfaces
         Task<BaseResponse<MailgunMessage>> delete(MailgunMessageRequest messageRequest);
         Task<BaseResponse<MailgunMessage>> update(MailgunMessageRequest messageRequest);
         Task<BaseResponse<MailgunMessage>> get(string id);
+        Task<List<MailgunMessage>> getNextForProcessing();
     }
 }

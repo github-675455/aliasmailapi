@@ -28,25 +28,19 @@ namespace AliasMailApi.Controllers
         private readonly IMessageService _messageService;
         private readonly IMailboxService _mailboxService;
         private readonly AppOptions _options;
-        private readonly IDistributedCache _cache;
         private readonly MessageContext _context;
 
-        public WebhookController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache, IMailboxService mailboxService) {
+        public WebhookController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IMailboxService mailboxService) {
             _messageService = messageService;
             _options = options.Value;
             _context = context;
-            _cache = cache;
             _mailboxService = mailboxService;
         }
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> Post([FromForm]MailgunMessageRequest message)
-        {
-            var result = await _messageService.create(message);
-            
-            await _mailboxService.import(result.Data);
-            
-            return Ok(result);
+        {   
+            return Ok(await _messageService.create(message));
         }
     }
 }

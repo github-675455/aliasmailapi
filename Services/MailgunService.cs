@@ -8,7 +8,7 @@ using RestSharp.Authenticators;
 
 namespace AliasMailApi.Services
 {
-    public class MailgunService : IMailService
+    public class MailgunService
     {
         private readonly AppOptions _options;
         private readonly Uri urlApi = new Uri ("https://api.eu.mailgun.net/v3");

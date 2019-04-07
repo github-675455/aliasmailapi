@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using System.Threading.Tasks;
 using AliasMailApi.Models;
 
@@ -5,6 +6,8 @@ namespace AliasMailApi.Interfaces
 {
     public interface IMailboxService
     {
-        Task import(BaseMessage message);
+        Task<Mailbox> GetMailbox(string email);
+        Task<Mailbox> CreateMailbox(Mailbox mail);
+        Mailbox CreateDefaultMailbox(MailAddress mailAdress, Domain domain);
     }
 }
