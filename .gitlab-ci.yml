@@ -50,4 +50,4 @@ develop_docker:
     - develop_build
   variables:
     ASSEMBLY_NAME: AliasMailApi
-    TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
+    TAG: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_PIPELINE_ID
