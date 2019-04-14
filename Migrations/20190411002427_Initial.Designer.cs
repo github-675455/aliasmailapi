@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AliasMailApi.Migrations
 {
     [DbContext(typeof(MessageContext))]
-    [Migration("20190408005909_Initial")]
+    [Migration("20190411002427_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -98,9 +98,7 @@ namespace AliasMailApi.Migrations
 
                     b.Property<DateTimeOffset>("Date");
 
-                    b.Property<bool>("Error");
-
-                    b.Property<DateTimeOffset>("ErrorDate");
+                    b.Property<DateTimeOffset?>("ErrorDate");
 
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(4096);
@@ -114,7 +112,7 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("InReplyTo")
                         .HasMaxLength(4096);
 
-                    b.Property<int>("JobStatus");
+                    b.Property<int>("JobStats");
 
                     b.Property<string>("MailAttachmentsJobErrorMessage")
                         .HasMaxLength(4096);
@@ -127,7 +125,7 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("MessageId")
                         .HasMaxLength(4096);
 
-                    b.Property<DateTimeOffset>("NextRetry");
+                    b.Property<DateTimeOffset?>("NextRetry");
 
                     b.Property<string>("OriginalDate")
                         .HasMaxLength(256);

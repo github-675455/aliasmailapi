@@ -117,12 +117,11 @@ namespace AliasMailApi.Migrations
                     Recipient = table.Column<string>(nullable: true),
                     remoteIpAddress = table.Column<string>(maxLength: 45, nullable: true),
                     BaseMessageId = table.Column<Guid>(maxLength: 36, nullable: true),
-                    JobStatus = table.Column<int>(nullable: false),
-                    Error = table.Column<bool>(nullable: false),
+                    JobStats = table.Column<int>(nullable: false),
                     ErrorMessage = table.Column<string>(maxLength: 4096, nullable: true),
-                    ErrorDate = table.Column<DateTimeOffset>(nullable: false),
+                    ErrorDate = table.Column<DateTimeOffset>(nullable: true),
                     Retries = table.Column<int>(nullable: false),
-                    NextRetry = table.Column<DateTimeOffset>(nullable: false),
+                    NextRetry = table.Column<DateTimeOffset>(nullable: true),
                     Source = table.Column<int>(nullable: false)
                 },
                 constraints: table =>

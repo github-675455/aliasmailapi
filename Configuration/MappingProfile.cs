@@ -2,6 +2,7 @@ using System;
 using System.Net.Mail;
 using AliasMailApi.Models;
 using AliasMailApi.Models.DTO;
+using AliasMailApi.Models.DTO.Response;
 using AliasMailApi.Models.Enum;
 using AutoMapper;
 
@@ -12,6 +13,7 @@ namespace AliasMailApi.Configuration
         public MappingProfile()
         {
             CreateMap<MailgunMessageRequest, MailgunMessage>();
+            CreateMap<Mail, SimpleMailResponse>();
             CreateMap<MailgunMessage, Mail>()
             .ForMember(e => e.Id, opt => opt.Ignore())
             .ForMember(e => e.BaseMessageId, opt => opt.MapFrom(src => src.Id))

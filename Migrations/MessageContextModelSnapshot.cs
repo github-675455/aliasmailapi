@@ -96,9 +96,7 @@ namespace AliasMailApi.Migrations
 
                     b.Property<DateTimeOffset>("Date");
 
-                    b.Property<bool>("Error");
-
-                    b.Property<DateTimeOffset>("ErrorDate");
+                    b.Property<DateTimeOffset?>("ErrorDate");
 
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(4096);
@@ -112,7 +110,7 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("InReplyTo")
                         .HasMaxLength(4096);
 
-                    b.Property<int>("JobStatus");
+                    b.Property<int>("JobStats");
 
                     b.Property<string>("MailAttachmentsJobErrorMessage")
                         .HasMaxLength(4096);
@@ -125,7 +123,7 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("MessageId")
                         .HasMaxLength(4096);
 
-                    b.Property<DateTimeOffset>("NextRetry");
+                    b.Property<DateTimeOffset?>("NextRetry");
 
                     b.Property<string>("OriginalDate")
                         .HasMaxLength(256);

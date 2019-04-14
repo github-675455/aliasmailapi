@@ -186,8 +186,14 @@ namespace AliasMailApi.Services
                                 on messages.Id equals mails.BaseMessageId into joinMessagesWithMails
                                 from mails in joinMessagesWithMails.DefaultIfEmpty()
                                 where messages.Valid == true
-                                && (mails == null || (mails.Retries > 0 && mails.Source == 0 && mails.NextRetry < DateTime.Now))
-                                select messages).ToListAsync();
+                                && (mails == null ||
+                                (
+                                    (mails.JobStats == JobStats.Pending || mails.JobStats == JobStats.Error) &&
+                                    mails.Retries > 0 &&
+                                    mails.Source == 0 &&
+                                    mails.NextRetry < DateTime.Now)
+                                )
+                                select messages).AsNoTracking().ToListAsync();
 
             return result;
         }

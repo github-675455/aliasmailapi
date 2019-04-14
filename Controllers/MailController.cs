@@ -18,6 +18,8 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using AliasMailApi.Models.DTO;
 using AliasMailApi.Interfaces;
+using AutoMapper;
+using AliasMailApi.Models.DTO.Response;
 
 namespace AliasMailApi.Controllers
 {
@@ -29,16 +31,19 @@ namespace AliasMailApi.Controllers
         private readonly IMailService _mailService;
         private readonly AppOptions _options;
         private readonly MessageContext _context;
+        private readonly IMapper _mapper;
 
         public MailController(
             MessageContext context,
             IMessageService messageService,
             IMailService mailService,
+            IMapper mapper,
             IOptions<AppOptions> options)
         {
             _messageService = messageService;
             _mailService = mailService;
             _options = options.Value;
+            _mapper = mapper;
             _context = context;
         }
         [HttpPost("import")]
@@ -81,14 +86,15 @@ namespace AliasMailApi.Controllers
             return Ok(await _context.Mails.Include(e => e.MailAttachments).ToListAsync());
         }
 
-        [HttpGet("/simple")]
+        [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
             if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
             {
                 return Unauthorized();
             }
-            return Ok(await _context.Mails.Include(e => e.MailAttachments).ToListAsync());
+
+            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).ToListAsync());
         }
     }
 }

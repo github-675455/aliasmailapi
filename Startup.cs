@@ -52,7 +52,9 @@ namespace AliasMailApi
 
             defaultConnection = String.IsNullOrEmpty(defaultConnection) ? Configuration.GetConnectionString("DefaultConnection") : defaultConnection;
 
-            services.AddDbContextPool<MessageContext>(options => options.UseMySql(defaultConnection));
+            services.AddDbContextPool<MessageContext>(options => {
+                options.UseMySql(defaultConnection);
+            });
 
             services.AddOptions<AppOptions>().Configure(o =>
             {

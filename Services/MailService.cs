@@ -25,6 +25,7 @@ namespace AliasMailApi.Services
         private readonly IMapper _mapper;
         private readonly IMailgunAttachment _mailgunAttachment;
         private readonly ILogger _logger;
+
         public MailService(
             MessageContext context,
             IMessageService messageService,
@@ -44,11 +45,13 @@ namespace AliasMailApi.Services
 
         public async Task SetMailError(Mail mail, string errorMessage) {
 
-            mail.Error = true;
+            mail.JobStats = JobStats.Error;
+
             if(errorMessage.Length > 4096)
                 errorMessage = errorMessage.Substring(0, 4096);
+            else
+                mail.ErrorMessage = errorMessage;
             
-            mail.ErrorMessage = errorMessage;
             mail.ErrorDate = DateTime.Now;
             mail.Retries = mail.Retries - 1;
             mail.NextRetry = DateTime.Now.AddMinutes(10);
@@ -75,19 +78,18 @@ namespace AliasMailApi.Services
             
             if(message is MailgunMessage)
             {
-                Mail newMail = new Mail(message);
+                var mailgunMessage = (MailgunMessage)message;
 
+                Mail newMail = null;
+                
                 try
                 {
-                    var mailFound = await _context.Mails.FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
+                    newMail = await _context.Mails.FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
 
-                    if(mailFound == null)
-                    {
+                    if(newMail == null){
+                        newMail = new Mail(message);
                         await _context.Mails.AddAsync(newMail);
                         await _context.SaveChangesAsync();
-                    }
-                    else{
-                        newMail = mailFound;
                     }
 
                     if(newMail.Retries <= 0){
@@ -95,10 +97,7 @@ namespace AliasMailApi.Services
                         return response;
                     }
 
-                    var mailgunMessage = (MailgunMessage)message;
-
                     var toEmail = new MailAddress(mailgunMessage.To);
-                    
                     var domainFound = await _domainService.get(toEmail.Host);
 
                     if(domainFound == null){
@@ -119,11 +118,11 @@ namespace AliasMailApi.Services
                     }
 
                     var mail = _mapper.Map<Mail>(mailgunMessage);
-
+                    
                     mail.Id = newMail.Id;
                     mail.BaseMessageId = newMail.BaseMessageId;
 
-                    newMail = mail;
+                    _context.Entry(newMail).State = EntityState.Detached;
 
                     using(var transaction = _context.Database.BeginTransaction())
                     {
@@ -145,7 +144,11 @@ namespace AliasMailApi.Services
                             mail.MailAttachmentsJobStatus = JobStats.Done;
                         }
 
-                        mail.JobStatus = JobStats.Done;
+                        mail.ErrorMessage = string.Empty;
+                        mail.ErrorDate = null;
+                        mail.NextRetry = null;
+
+                        mail.JobStats = JobStats.Done;
 
                         _context.Mails.Update(mail);
 
