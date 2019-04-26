@@ -170,7 +170,13 @@ namespace AliasMailApi.Services
 
         public async Task<BaseResponse<MailgunMessage>> get(string id)
         {
-            var messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Id == Guid.Parse(id));
+            var messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Id.Equals(Guid.Parse(id)));
+
+            if(messageFound == null)
+                return new BaseResponse<MailgunMessage>()
+                {
+                    Success = false
+                };
 
             return new BaseResponse<MailgunMessage>()
             {

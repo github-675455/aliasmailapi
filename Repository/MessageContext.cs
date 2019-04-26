@@ -24,7 +24,7 @@ namespace AliasMailApi.Repository
             .HasData(new Domain{ Id = new Guid("f49c0b55-451c-4955-a25a-a9a19f8e039f"), Name = "vinicius.sl", Description = "", Active = true });
 
             builder.Entity<MailAttachment>()
-            .HasKey(a => new { a.Name, a.MailId });
+            .HasKey(a => new { a.Id, a.MailId });
             
             builder.Entity<Mail>()
             .Property(s => s.MailAttachmentsJobStatus)

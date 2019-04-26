@@ -23,7 +23,7 @@ namespace AliasMailApi.Models
         public string ToAddress { get; set; }
         [MaxLength(256)]
         public string ToDisplayName { get; set; }
-        public DateTimeOffset Date { get; set; }
+        public DateTimeOffset? Date { get; set; }
         [MaxLength(256)]
         public string OriginalDate { get; set; }
         public string Subject { get; set; }

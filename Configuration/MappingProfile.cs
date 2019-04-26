@@ -17,7 +17,7 @@ namespace AliasMailApi.Configuration
             CreateMap<MailgunMessage, Mail>()
             .ForMember(e => e.Id, opt => opt.Ignore())
             .ForMember(e => e.BaseMessageId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(e => e.Date, opt => opt.MapFrom(src => DateTimeOffset.Parse(src.Date)))
+            .ForMember(e => e.Date, opt => opt.MapFrom(src => CustomDateEmailFormat(src.Date)))
             .ForMember(e => e.OriginalDate, opt => opt.MapFrom(src => src.Date))
             .ForMember(e => e.ToAddress, opt => opt.MapFrom(src => new MailAddress(src.To).Address))
             .ForMember(e => e.ToDisplayName, opt => opt.MapFrom(src => new MailAddress(src.To).DisplayName))
@@ -26,6 +26,19 @@ namespace AliasMailApi.Configuration
             .ForMember(e => e.SenderAddress, opt => opt.MapFrom(src => new MailAddress(src.Sender).Address))
             .ForMember(e => e.SenderDisplayName, opt => opt.MapFrom(src => new MailAddress(src.Sender).DisplayName))
             .ForMember(e => e.Source, opt => opt.MapFrom( o => DataSource.Mailgun));
+        }
+
+        private static DateTimeOffset? CustomDateEmailFormat(string date)
+        {
+            var result = new DateTimeOffset();
+
+            var sanitizeDate = date.Replace("(UTC)", string.Empty).Replace("(CEST)", string.Empty);
+
+            if(DateTimeOffset.TryParse(sanitizeDate, out result)) {
+                return result;
+            }
+
+            return null;
         }
     }
 }

@@ -7,6 +7,7 @@ namespace AliasMailApi.Models
 {
     public class MailAttachment
     {
+        public Guid Id { get; set; }
         [JsonProperty("name")]
         public string Name { get; set; }
         [JsonIgnore]

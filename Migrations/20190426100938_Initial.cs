@@ -101,7 +101,7 @@ namespace AliasMailApi.Migrations
                     FromDisplayName = table.Column<string>(maxLength: 256, nullable: true),
                     ToAddress = table.Column<string>(maxLength: 256, nullable: true),
                     ToDisplayName = table.Column<string>(maxLength: 256, nullable: true),
-                    Date = table.Column<DateTimeOffset>(nullable: false),
+                    Date = table.Column<DateTimeOffset>(nullable: true),
                     OriginalDate = table.Column<string>(maxLength: 256, nullable: true),
                     Subject = table.Column<string>(nullable: true),
                     UserAgent = table.Column<string>(maxLength: 4096, nullable: true),
@@ -139,8 +139,9 @@ namespace AliasMailApi.Migrations
                 name: "MailAttachments",
                 columns: table => new
                 {
-                    Name = table.Column<string>(nullable: false),
+                    Id = table.Column<Guid>(nullable: false),
                     MailId = table.Column<Guid>(nullable: false),
+                    Name = table.Column<string>(nullable: true),
                     Data = table.Column<byte[]>(nullable: true),
                     Size = table.Column<long>(nullable: false),
                     ContentType = table.Column<string>(nullable: true),
@@ -148,7 +149,7 @@ namespace AliasMailApi.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MailAttachments", x => new { x.Name, x.MailId });
+                    table.PrimaryKey("PK_MailAttachments", x => new { x.Id, x.MailId });
                     table.ForeignKey(
                         name: "FK_MailAttachments_Mails_MailId",
                         column: x => x.MailId,

@@ -84,7 +84,7 @@ namespace AliasMailApi.Services
                 
                 try
                 {
-                    newMail = await _context.Mails.FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
+                    newMail = await _context.Mails.AsNoTracking().FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
 
                     if(newMail == null){
                         newMail = new Mail(message);
@@ -97,23 +97,23 @@ namespace AliasMailApi.Services
                         return response;
                     }
 
-                    var toEmail = new MailAddress(mailgunMessage.To);
-                    var domainFound = await _domainService.get(toEmail.Host);
+                    var toRecipient = new MailAddress(mailgunMessage.Recipient);
+                    var domainFound = await _domainService.get(toRecipient.Host);
 
                     if(domainFound == null){
                         //mark to delete mailgunmMessage
-                        var errorMessage = string.Format("message id: {0} the domain {1} was not found", message.Id, toEmail.Host);
+                        var errorMessage = string.Format("message id: {0} the domain {1} was not found", message.Id, toRecipient.Host);
                         await SetMailError(newMail, errorMessage);
                         _logger.LogError(errorMessage);
                         response.Errors.Add(new ApiError{ description = "Domain not found" });
                         return response;
                     }
 
-                    var mailboxFound = await _mailboxService.GetMailbox(toEmail.Address);
+                    var mailboxFound = await _mailboxService.GetMailbox(toRecipient.Address);
                     
                     if(mailboxFound == null)
                     {
-                        var newMailbox = _mailboxService.CreateDefaultMailbox(toEmail, domainFound);
+                        var newMailbox = _mailboxService.CreateDefaultMailbox(toRecipient, domainFound);
                         mailboxFound = await _mailboxService.CreateMailbox(newMailbox);
                     }
 
@@ -139,8 +139,12 @@ namespace AliasMailApi.Services
                             });
                             await Task.WhenAll(getFiles.ToArray());
 
-                            getFiles.ToList().ForEach(async attachment => await _context.MailAttachments.AddAsync(attachment.Result));
-
+                            getFiles.ToList().ForEach(async attachment =>
+                            {
+                                attachment.Result.Id = Guid.NewGuid();
+                                await _context.MailAttachments.AddAsync(attachment.Result);
+                                await _context.SaveChangesAsync();
+                            });
                             mail.MailAttachmentsJobStatus = JobStats.Done;
                         }
 
@@ -149,6 +153,7 @@ namespace AliasMailApi.Services
                         mail.NextRetry = null;
 
                         mail.JobStats = JobStats.Done;
+                        mail.MailAttachmentsJobStatus = JobStats.Done;
 
                         _context.Mails.Update(mail);
 
@@ -162,6 +167,8 @@ namespace AliasMailApi.Services
                     var errorMessage = string.Format("{0} - {1}", exception.Message, exception.StackTrace);
                     await SetMailError(newMail, errorMessage);
                     _logger.LogError(errorMessage);
+                    response.Success = false;
+                    response.Errors.Add(new ApiError{ description = errorMessage });
                 }
             }
 

@@ -14,7 +14,7 @@ namespace AliasMailApi.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.2.3-servicing-35854")
+                .HasAnnotation("ProductVersion", "2.2.4-servicing-10062")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("AliasMailApi.Models.BaseMessage", b =>
@@ -94,7 +94,7 @@ namespace AliasMailApi.Migrations
 
                     b.Property<DateTimeOffset>("Created");
 
-                    b.Property<DateTimeOffset>("Date");
+                    b.Property<DateTimeOffset?>("Date");
 
                     b.Property<DateTimeOffset?>("ErrorDate");
 
@@ -169,7 +169,7 @@ namespace AliasMailApi.Migrations
 
             modelBuilder.Entity("AliasMailApi.Models.MailAttachment", b =>
                 {
-                    b.Property<string>("Name");
+                    b.Property<Guid>("Id");
 
                     b.Property<Guid>("MailId");
 
@@ -177,11 +177,13 @@ namespace AliasMailApi.Migrations
 
                     b.Property<byte[]>("Data");
 
+                    b.Property<string>("Name");
+
                     b.Property<long>("Size");
 
                     b.Property<string>("url");
 
-                    b.HasKey("Name", "MailId");
+                    b.HasKey("Id", "MailId");
 
                     b.HasIndex("MailId");
 
