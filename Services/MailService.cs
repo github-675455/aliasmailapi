@@ -147,9 +147,10 @@ namespace AliasMailApi.Services
                         getFiles.ToList().ForEach(async attachment =>
                         {
                             attachment.Result.Id = Guid.NewGuid();
-                            await _context.MailAttachments.AddAsync(attachment.Result);
-                            await _context.SaveChangesAsync();
+                            await _context.AddAsync(attachment.Result);
                         });
+                        await _context.SaveChangesAsync();
+
                         mail.MailAttachmentsJobStatus = JobStats.Done;
                     }
 
