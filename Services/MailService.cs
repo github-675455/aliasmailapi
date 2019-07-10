@@ -8,7 +8,6 @@ using AliasMailApi.Interfaces;
 using AutoMapper;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System;
 using AliasMailApi.Extensions;
 using Microsoft.Extensions.Logging;
@@ -102,7 +101,19 @@ namespace AliasMailApi.Services
                         return response;
                     }
 
-                    var toRecipient = new MailAddress(mailgunMessage.Recipient);
+                    bool recipientEmpty = mailgunMessage.Recipient != null ? mailgunMessage.Recipient.Equals(string.Empty) : true;
+
+                    bool toEmpty = mailgunMessage.To != null ? mailgunMessage.To.Equals(string.Empty) : true;
+
+
+                    if(recipientEmpty && toEmpty)
+                    {
+                        _logger.LogInformation("recipient and to email headers are empty");
+                        response.Errors.Add(new ApiError { description = "recipient and to email headers are empty" });
+                        return response;
+                    }
+
+                    var toRecipient = !recipientEmpty ? new MailAddress(mailgunMessage.Recipient) : new MailAddress(mailgunMessage.To);
                     var domainFound = await _domainService.get(toRecipient.Host);
 
                     if (domainFound == null)
@@ -136,19 +147,14 @@ namespace AliasMailApi.Services
                         var attachments = JsonConvert.DeserializeObject<MailAttachment[]>(jsonAttachments);
                         ICollection<Task<MailAttachment>> getFiles = new List<Task<MailAttachment>>();
 
-                        attachments.ToList().ForEach(e =>
+                        attachments.ToList().ForEach(async e =>
                         {
-                            getFiles.Add(_mailgunAttachment.get(e));
+                            e = await _mailgunAttachment.get(e);
                             e.MailId = mail.Id;
-                            e.url = string.Empty;
+                            e.Id = Guid.NewGuid();
+                            await _context.AddAsync(e);
                         });
-                        await Task.WhenAll(getFiles.ToArray());
 
-                        getFiles.ToList().ForEach(async attachment =>
-                        {
-                            attachment.Result.Id = Guid.NewGuid();
-                            await _context.AddAsync(attachment.Result);
-                        });
                         await _context.SaveChangesAsync();
 
                         mail.MailAttachmentsJobStatus = JobStats.Done;

@@ -22,6 +22,8 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using AliasMailApi.Interfaces;
 using AliasMailApi.Jobs;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Internal;
 
 namespace AliasMailApi
 {
@@ -77,6 +79,7 @@ namespace AliasMailApi
             services.AddTransient<IMailboxService, MailboxService>();
             services.AddTransient<IMailService, MailService>();
             services.AddTransient<IMailgunAttachment, MailgunAttachmentService>();
+            services.AddTransient<IAuthenticationService, AuthenticationService>();
             services.AddHostedService<MailImportJob>();
             services.AddHttpContextAccessor();
             services.AddMvcCore().AddJsonOptions(o => {
@@ -113,6 +116,9 @@ namespace AliasMailApi
             {
                 app.UseHsts();
             }
+
+            app.UseEndpointRouting();
+            app.UseMiddleware<AutorizationMiddleware>();
 
             app.UseMvc();
         }

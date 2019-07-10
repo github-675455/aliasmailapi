@@ -49,11 +49,6 @@ namespace AliasMailApi.Controllers
         [HttpPost("import")]
         public async Task<IActionResult> ImportAsync([FromBody] MailRequest mail)
         {
-            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
-            {
-                return Unauthorized();
-            }
-
             var response = await _messageService.get(mail.Id);
 
             if (!response.Success)
@@ -69,31 +64,24 @@ namespace AliasMailApi.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(MailgunMessageRequest message)
         {
-            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
-            {
-                return Unauthorized();
-            }
             return Ok(await _messageService.delete(message));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(string id)
+        {
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).FirstOrDefaultAsync(e => e.Id == Guid.Parse(id)));
         }
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
-            {
-                return Unauthorized();
-            }
             return Ok(await _context.Mails.Include(e => e.MailAttachments).ToListAsync());
         }
 
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
-            {
-                return Unauthorized();
-            }
-
             return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).ToListAsync());
         }
     }
