@@ -13,6 +13,7 @@ namespace AliasMailApi.Configuration
         public MappingProfile()
         {
             CreateMap<MailgunMessageRequest, MailgunMessage>();
+            CreateMap<MailgunMessage, SimpleMailgunResponse>();
             CreateMap<Mail, SimpleMailResponse>();
             CreateMap<MailgunMessage, Mail>()
             .ForMember(e => e.Id, opt => opt.Ignore())
