@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using AutoMapper;
+using AliasMailApi.Models.DTO.Response;
 using AliasMailApi.Interfaces;
+using System.Linq;
 
 namespace AliasMailApi.Controllers
 {
@@ -18,18 +21,36 @@ namespace AliasMailApi.Controllers
         private readonly AppOptions _options;
         private readonly IDistributedCache _cache;
         private readonly MessageContext _context;
+        private readonly IMapper _mapper;
 
-        public MailgunController(MessageContext context, IMessageService messageService, IOptions<AppOptions> options, IDistributedCache cache) {
+        public MailgunController(
+            MessageContext context,
+            IMessageService messageService,
+            IOptions<AppOptions> options,
+            IDistributedCache cache,
+            IMapper mapper) {
             _messageService = messageService;
             _options = options.Value;
             _context = context;
             _cache = cache;
+            _mapper = mapper;
         }
         
         [HttpGet]
         public async Task<IActionResult> Get()
         {
             return Ok(await _context.MailgunMessages.ToListAsync());
+        }
+
+        [HttpGet("simple")]
+        public async Task<IActionResult> GetSimple()
+        {
+            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).ToListAsync());
         }
     }
 }
