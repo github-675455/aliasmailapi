@@ -45,11 +45,6 @@ namespace AliasMailApi.Controllers
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            if (HttpContext.Request.Headers["Authorization"] != _options.consumerToken)
-            {
-                return Unauthorized();
-            }
-
             return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).ToListAsync());
         }
     }
