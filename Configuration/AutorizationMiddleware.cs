@@ -18,18 +18,21 @@ namespace AliasMailApi.Configuration
         }
 
         public async Task InvokeAsync(HttpContext context)
-        {
+        {                
             var route = context.GetRouteData();
 
-            var controller = route.Values["controller"];
-            
-            if(controller != null)
+            if(route != null)
             {
-                var controllerSanitized = controller.ToString().ToLower();
-                if(controllerSanitized.Equals("webhook"))
+                var controller = route.Values["controller"];
+                
+                if(controller != null)
                 {
-                    await _next(context);
-                    return;
+                    var controllerSanitized = controller.ToString().ToLower();
+                    if(controllerSanitized.Equals("webhook"))
+                    {
+                        await _next(context);
+                        return;
+                    }
                 }
             }
 
