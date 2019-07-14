@@ -33,7 +33,6 @@ namespace AliasMailApi.Configuration
                 }
             }
 
-
             if (context.Request.Headers["Authorization"] != _options.consumerToken)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
