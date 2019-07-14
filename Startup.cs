@@ -1,25 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AliasMailApi.Configuration;
 using AliasMailApi.Repository;
 using AliasMailApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using KubeClient;
-using KubeClient.Extensions.Configuration;
 using Newtonsoft.Json;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using AliasMailApi.Interfaces;
 using AliasMailApi.Jobs;
 using Microsoft.AspNetCore.Authentication;
@@ -38,7 +28,10 @@ namespace AliasMailApi
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var env = services.BuildServiceProvider().GetRequiredService<IHostingEnvironment>();
+            var env = services.BuildServiceProvider()
+            .GetRequiredService<IHostingEnvironment>();
+
+            services.AddHealthChecks();
 
             services.AddOptions();
             services.AddStackExchangeRedisCache(options =>
@@ -116,6 +109,8 @@ namespace AliasMailApi
             {
                 app.UseHsts();
             }
+
+            app.UseHealthChecks("/health", new HealthJsonResult());
 
             app.UseEndpointRouting();
             app.UseMiddleware<AutorizationMiddleware>();
