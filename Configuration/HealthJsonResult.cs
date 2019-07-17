@@ -5,14 +5,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Options;
 
 namespace AliasMailApi.Configuration
 {
     public class HealthJsonResult : HealthCheckOptions
     {
-        public HealthJsonResult()
+        public static string buildInfo;
+        public HealthJsonResult(IOptions<AppOptions> options)
         {
             base.ResponseWriter = WriteResponse;
+            buildInfo = options.Value.buildInfo;
         }
 
         private static Task WriteResponse(HttpContext httpContext, HealthReport result)
@@ -28,7 +31,8 @@ namespace AliasMailApi.Configuration
                     new JProperty(pair.Key, new JObject(
                         new JProperty("status", pair.Value.Status.ToString()),
                         new JProperty("description", pair.Value.Description),
-                        new JProperty("data", new JObject(pair.Value.Data.Select(p => new JProperty(p.Key, p.Value))))))))));
+                        new JProperty("data", new JObject(pair.Value.Data.Select(p => new JProperty(p.Key, p.Value))))))))),
+		        new JProperty("buildInfo", buildInfo));
             return httpContext.Response.WriteAsync(json.ToString(Formatting.Indented));
         }
     }

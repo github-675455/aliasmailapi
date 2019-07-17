@@ -14,6 +14,7 @@ using AliasMailApi.Interfaces;
 using AliasMailApi.Jobs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Internal;
+using Microsoft.Extensions.Options;
 
 namespace AliasMailApi
 {
@@ -56,6 +57,7 @@ namespace AliasMailApi
                 o.mailgunApiToken = mailgunApiTokenEnviroment;
                 o.consumerToken = consumerToken;
                 o.mailgunApiDomain = mailgunApiDomainEnviroment;
+                o.buildInfo = Configuration.GetSection("BuildInfo").Value;
             });
 
             var mappingConfig = new MapperConfiguration(mc =>
@@ -85,7 +87,7 @@ namespace AliasMailApi
             }).AddJsonFormatters().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, MessageContext context)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, MessageContext context, IOptions<AppOptions> options)
         {
             var dropDatabase = Environment.GetEnvironmentVariable("DropDatabase");
             if(!string.IsNullOrWhiteSpace(dropDatabase))
@@ -110,7 +112,7 @@ namespace AliasMailApi
                 app.UseHsts();
             }
 
-            app.UseHealthChecks("/health", new HealthJsonResult());
+            app.UseHealthChecks("/health", new HealthJsonResult(options));
 
             app.UseEndpointRouting();
             app.UseMiddleware<AutorizationMiddleware>();
