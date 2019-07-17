@@ -42,9 +42,18 @@ namespace AliasMailApi.Controllers
             return Ok(await _context.MailgunMessages.ToListAsync());
         }
 
-        [HttpGet("simple")]
-        public async Task<IActionResult> GetSimple()
+        [HttpGet("simple/{skip?}/{take?}")]
+        public async Task<IActionResult> GetSimple(int? skip, int? take)
         {
+            if(skip.HasValue && !take.HasValue)
+                return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).Skip(skip.Value).ToListAsync());
+            
+            if(take.HasValue && !skip.HasValue)
+                return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).Take(take.Value).ToListAsync());
+
+            if(take.HasValue && skip.HasValue)
+                return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).Skip(skip.Value).Take(take.Value).ToListAsync());
+
             return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).ToListAsync());
         }
     }
