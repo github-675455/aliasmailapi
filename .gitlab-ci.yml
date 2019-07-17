@@ -38,7 +38,7 @@ develop_build:
     - mv docker/publish/*.config docker/app/
     - mv docker/publish/*.json docker/app/
     - TZ="America/Sao_Paulo";
-    - BuildInfo=$(echo -n "Build: $(date), Commit: $CI_COMMIT_SHA, PipeId: $CI_PIPELINE_ID");
+    - 'BuildInfo=$(echo -n "Build: $(date), Commit: $CI_COMMIT_SHA, PipeId: $CI_PIPELINE_ID");'
     - sed -i "s/\:BuildInfo/$BuildInfo/g" appsettings.json
     - cp Dockerfile docker/
     - docker build -t $TAG ./docker/
