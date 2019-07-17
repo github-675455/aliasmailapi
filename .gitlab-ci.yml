@@ -36,10 +36,10 @@ develop_build:
     - export DOCKER_HOST=$DOCKER_PORT
     - mv docker/publish/$ASSEMBLY_NAME.* docker/app/
     - mv docker/publish/*.config docker/app/
-    - mv docker/publish/*.json docker/app/
     - TZ="America/Sao_Paulo";
     - 'BuildInfo=$(echo -n "Build: $(date), Commit: $CI_COMMIT_SHA, PipeId: $CI_PIPELINE_ID");'
-    - sed -i "s/\:BuildInfo/$BuildInfo/g" appsettings.json
+    - sed -i "s/\:BuildInfo/$BuildInfo/g" docker/publish/appsettings.json
+    - mv docker/publish/*.json docker/app/
     - cp Dockerfile docker/
     - docker build -t $TAG ./docker/
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
