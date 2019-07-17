@@ -41,6 +41,7 @@ develop_build:
     - docker build -t $TAG ./docker/
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $TAG
+    - docker tag $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
     - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
 
 develop_docker:
