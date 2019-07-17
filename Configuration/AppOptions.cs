@@ -5,5 +5,6 @@ namespace AliasMailApi.Configuration
         public string mailgunApiToken;
         public string mailgunApiDomain;
         public string consumerToken;
+	    public string buildInfo;
     }
 }
