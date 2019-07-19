@@ -1,25 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Formatting;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using AliasMailApi.Configuration;
-using AliasMailApi.Models;
 using AliasMailApi.Repository;
-using AliasMailApi.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
-using Newtonsoft.Json;
-using Microsoft.AspNetCore.Authorization;
 using AliasMailApi.Models.DTO;
 using AliasMailApi.Interfaces;
 using AutoMapper;
 using AliasMailApi.Models.DTO.Response;
+using AliasMailApi.Extensions;
 
 namespace AliasMailApi.Controllers
 {
@@ -76,22 +67,13 @@ namespace AliasMailApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.Mails.Include(e => e.MailAttachments).ToListAsync());
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).AddPagging(HttpContext).ToListAsync());
         }
 
-        [HttpGet("simple/{skip?}/{take?}")]
-        public async Task<IActionResult> GetSimple(int? skip, int? take)
+        [HttpGet("simple")]
+        public async Task<IActionResult> GetSimple()
         {
-            if(skip.HasValue && !take.HasValue)
-                return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).Skip(skip.Value).ToListAsync());
-            
-            if(take.HasValue && !skip.HasValue)
-                return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).Take(take.Value).ToListAsync());
-
-            if(take.HasValue && skip.HasValue)
-                return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).Skip(skip.Value).Take(take.Value).ToListAsync());
-
-            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).ToListAsync());
+            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).AddPagging(HttpContext).ToListAsync());
         }
     }
 }
