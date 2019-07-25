@@ -1,20 +1,22 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using AliasMailApi.Models;
 using AliasMailApi.Models.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace aliasmailapi.Extensions
 {
-    public static class PagedResultExtension
+    public static class ResultExtension
     {
         private static IHttpContextAccessor _accessor;
         public static void Configure(IHttpContextAccessor httpContextAccessor)
         {
             _accessor = httpContextAccessor;
         }
-        public static async Task<PagedResult<T>> GetPaged<T>(this IQueryable<T> query) where T : class
+        public static async Task<BaseResponse<T>> GetPagedResult<T>(this IQueryable<T> query) where T : class
         {
             var page = _accessor.HttpContext.Request.Query["page"];
             var pageSize = _accessor.HttpContext.Request.Query["pageSize"];
@@ -37,7 +39,7 @@ namespace aliasmailapi.Extensions
             if(disableRowCountHasValue)
                 disableRowCountParsed = Boolean.Parse(disableRowCount);
 
-            var result = new PagedResult<T>();
+            var result = new BaseResponse<T>();
             result.CurrentPage = pageParsed;
             result.PageSize = pageSizeParsed;
 
@@ -50,7 +52,16 @@ namespace aliasmailapi.Extensions
 
             var skipActuallyResult = (pageParsed - 1) * pageSizeParsed;
             var skip = skipActuallyResult < 1 ? 0 : skipActuallyResult;
-            result.Results = await query.Skip(skip).Take(pageSizeParsed).ToListAsync();
+            result.Data = await query.Skip(skip).Take(pageSizeParsed).ToListAsync();
+
+            return result;
+        }
+
+        public static async Task<BaseResponse<T>> GetOneResult<T>(this IQueryable<T> query, Expression<Func<T, bool>> predicate) where T : class
+        {
+            var result = new BaseResponse<T>();
+
+            result.Data = await query.Where(predicate).ToListAsync();
 
             return result;
         }

@@ -11,6 +11,8 @@ using AliasMailApi.Models.DTO.Response;
 using AliasMailApi.Interfaces;
 using System.Linq;
 using aliasmailapi.Extensions;
+using System;
+using AliasMailApi.Models.DTO;
 
 namespace AliasMailApi.Controllers
 {
@@ -40,13 +42,25 @@ namespace AliasMailApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.MailgunMessages.GetPaged());
+            return Ok(await _context.MailgunMessages.GetPagedResult());
+        }
+        
+        [HttpDelete]
+        public async Task<IActionResult> Delete([FromBody] MailgunMessageRequest request)
+        {
+            return Ok(await _messageService.delete(request));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(Guid id)
+        {
+            return Ok(await _context.MailgunMessages.GetOneResult(e => e.Id == id));
         }
 
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).GetPaged());
+            return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).GetPagedResult());
         }
     }
 }

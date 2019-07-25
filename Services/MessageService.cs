@@ -69,8 +69,7 @@ namespace AliasMailApi.Services
             {
                 _context.Attach(messageFound).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
-                finalResponse.Success = true;
-                finalResponse.Data = messageFound;
+                finalResponse.Data.Add(messageFound);
             }
 
             if (!filter)
@@ -100,7 +99,7 @@ namespace AliasMailApi.Services
 
             if (messageRequest.Token.NotEmpty())
             {
-                messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Token == messageRequest.Token);
+                messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Token == message.Token);
                 if (messageFound == null)
                     errors.Add(new ApiError { description = "Token not found." });
 
@@ -109,7 +108,7 @@ namespace AliasMailApi.Services
 
             if (messageRequest.MessageId.NotEmpty())
             {
-                messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.MessageId == messageRequest.MessageId);
+                messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Id == Guid.Parse(message.MessageId));
                 if (messageFound == null)
                     errors.Add(new ApiError { description = "MessageId not found." });
 
@@ -120,8 +119,7 @@ namespace AliasMailApi.Services
             {
                 _context.Remove(messageFound);
                 await _context.SaveChangesAsync();
-                finalResponse.Success = true;
-                finalResponse.Data = messageFound;
+                finalResponse.Data.Add(messageFound);
             }
 
             if (!filter)
@@ -160,29 +158,23 @@ namespace AliasMailApi.Services
 
             await _context.AddAsync(message);
             await _context.SaveChangesAsync();
+            
+            var response = new BaseResponse<MailgunMessage>();
+            response.Data.Add(message);
 
-            return new BaseResponse<MailgunMessage>
-            {
-                Success = true,
-                Data = message
-            };
+            return response;
         }
 
         public async Task<BaseResponse<MailgunMessage>> get(string id)
         {
             var messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Id.Equals(Guid.Parse(id)));
 
-            if(messageFound == null)
-                return new BaseResponse<MailgunMessage>()
-                {
-                    Success = false
-                };
+            var response = new BaseResponse<MailgunMessage>();
 
-            return new BaseResponse<MailgunMessage>()
-            {
-                Success = true,
-                Data = messageFound
-            };
+            if(messageFound == null)
+                response.Errors.Add(new ApiError{description = "Not found"});
+
+            return response;
         }
 
         public async Task<List<MailgunMessage>> getNextForProcessing()

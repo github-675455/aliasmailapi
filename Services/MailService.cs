@@ -177,7 +177,6 @@ namespace AliasMailApi.Services
                     var errorMessage = string.Format("{0} - {1}", exception.Message, exception.StackTrace);
                     await SetMailError(newMail, errorMessage);
                     _logger.LogError(errorMessage);
-                    response.Success = false;
                     response.Errors.Add(new ApiError { description = errorMessage });
                 }
             }

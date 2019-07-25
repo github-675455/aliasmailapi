@@ -25,7 +25,7 @@ namespace AliasMailApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.Domains.GetPaged());
+            return Ok(await _context.Domains.GetPagedResult());
         }
     }
 }

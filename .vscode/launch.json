@@ -16,14 +16,7 @@
             "launchBrowser": {
                 "enabled": false
             },
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "DropDatabase": "true",
-                "SeedData": "true",
-                "ConsumerToken": "***REMOVED***",
-                "MailgunApiKey": "***REMOVED***",
-                "MailgunDomain": "vinicius.sl"
-            },
+            "envFile": "${workspaceFolder}/.env",
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
             }

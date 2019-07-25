@@ -43,12 +43,12 @@ namespace AliasMailApi.Controllers
         {
             var response = await _messageService.get(mail.Id);
 
-            if (!response.Success)
+            if (!response.Errors.Any())
             {
                 return Ok(response);
             }
 
-            var messageFound = response.Data;
+            var messageFound = response.Data.FirstOrDefault();
 
             return Ok(await _mailService.import(messageFound));
         }
@@ -60,21 +60,21 @@ namespace AliasMailApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(string id)
+        public async Task<IActionResult> Get(Guid id)
         {
-            return Ok(await _context.Mails.Include(e => e.MailAttachments).FirstOrDefaultAsync(e => e.Id == Guid.Parse(id)));
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).GetOneResult(e => e.Id == id));
         }
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.Mails.Include(e => e.MailAttachments).GetPaged());
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).GetPagedResult());
         }
 
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).GetPaged());
+            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).GetPagedResult());
         }
     }
 }

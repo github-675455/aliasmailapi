@@ -97,7 +97,7 @@ namespace AliasMailApi
                 context.Database.EnsureDeleted();
             }
 
-            PagedResultExtension.Configure(app.ApplicationServices.GetRequiredService<IHttpContextAccessor>());
+            ResultExtension.Configure(app.ApplicationServices.GetRequiredService<IHttpContextAccessor>());
 
             context.Database.Migrate();
 
