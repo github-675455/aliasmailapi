@@ -11,6 +11,7 @@ using AliasMailApi.Interfaces;
 using AutoMapper;
 using AliasMailApi.Models.DTO.Response;
 using AliasMailApi.Extensions;
+using aliasmailapi.Extensions;
 
 namespace AliasMailApi.Controllers
 {
@@ -67,13 +68,13 @@ namespace AliasMailApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.Mails.Include(e => e.MailAttachments).AddPagging(HttpContext).ToListAsync());
+            return Ok(await _context.Mails.Include(e => e.MailAttachments).GetPaged());
         }
 
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).AddPagging(HttpContext).ToListAsync());
+            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).GetPaged());
         }
     }
 }

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using AliasMailApi.Models.Enum;
-using Microsoft.AspNetCore.Mvc;
 
 namespace AliasMailApi.Models.DTO.Response
 {
