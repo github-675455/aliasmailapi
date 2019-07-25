@@ -15,6 +15,8 @@ using AliasMailApi.Jobs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Internal;
 using Microsoft.Extensions.Options;
+using aliasmailapi.Extensions;
+using Microsoft.AspNetCore.Http;
 
 namespace AliasMailApi
 {
@@ -94,6 +96,8 @@ namespace AliasMailApi
             {
                 context.Database.EnsureDeleted();
             }
+
+            PagedResultExtension.Configure(app.ApplicationServices.GetRequiredService<IHttpContextAccessor>());
 
             context.Database.Migrate();
 

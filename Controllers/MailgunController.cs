@@ -10,6 +10,7 @@ using AutoMapper;
 using AliasMailApi.Models.DTO.Response;
 using AliasMailApi.Interfaces;
 using System.Linq;
+using aliasmailapi.Extensions;
 
 namespace AliasMailApi.Controllers
 {
@@ -39,22 +40,13 @@ namespace AliasMailApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.MailgunMessages.ToListAsync());
+            return Ok(await _context.MailgunMessages.GetPaged());
         }
 
-        [HttpGet("simple/{skip?}/{take?}")]
-        public async Task<IActionResult> GetSimple(int? skip, int? take)
+        [HttpGet("simple")]
+        public async Task<IActionResult> GetSimple()
         {
-            if(skip.HasValue && !take.HasValue)
-                return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).Skip(skip.Value).ToListAsync());
-            
-            if(take.HasValue && !skip.HasValue)
-                return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).Take(take.Value).ToListAsync());
-
-            if(take.HasValue && skip.HasValue)
-                return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).Skip(skip.Value).Take(take.Value).ToListAsync());
-
-            return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).ToListAsync());
+            return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).GetPaged());
         }
     }
 }
