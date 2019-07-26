@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using AliasMailApi.Interfaces;
 using aliasmailapi.Extensions;
+using System;
 
 namespace AliasMailApi.Controllers
 {
@@ -26,6 +27,15 @@ namespace AliasMailApi.Controllers
         public async Task<IActionResult> Get()
         {
             return Ok(await _context.Domains.GetPagedResult());
+        }
+        
+        [HttpDelete]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var encontrado = await _context.Domains.FirstAsync(e => e.Id == id);
+            _context.Domains.Remove(encontrado);
+            await _context.SaveChangesAsync();
+            return Ok(encontrado.FormatOneResult());
         }
     }
 }

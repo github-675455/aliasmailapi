@@ -24,6 +24,7 @@ namespace AliasMailApi.Controllers
             _context = context;
             _mailboxService = mailboxService;
         }
+        
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> Post([FromForm]MailgunMessageRequest message)

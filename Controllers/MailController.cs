@@ -48,9 +48,7 @@ namespace AliasMailApi.Controllers
                 return Ok(response);
             }
 
-            var messageFound = response.Data.FirstOrDefault();
-
-            return Ok(await _mailService.import(messageFound));
+            return Ok(await _mailService.import(response.Data));
         }
 
         [HttpDelete]

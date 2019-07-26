@@ -11,6 +11,8 @@ namespace AliasMailApi.Models
         }
 
         [Key]
+        public Guid Id { get; set; }
+        
         [StringLength(512)]
         public string Email { get; set; }
         public Guid DomainId { get; set; }

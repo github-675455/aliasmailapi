@@ -1,10 +1,7 @@
 using System;
 using System.Linq;
-using System.Net.Http.Formatting;
-using System.Text.RegularExpressions;
 using AliasMailApi.Models;
 using Microsoft.AspNetCore.Http;
-using System.Net.Mail;
 using AliasMailApi.Repository;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +15,7 @@ using AliasMailApi.Extensions;
 using System.Collections.Generic;
 using AliasMailApi.Interfaces;
 using AliasMailApi.Models.Enum;
+using aliasmailapi.Factory;
 
 namespace AliasMailApi.Services
 {
@@ -26,8 +24,12 @@ namespace AliasMailApi.Services
         private readonly MessageContext _context;
         private readonly IOptions<AppOptions> _options;
         private readonly IMapper _mapper;
-        private IHttpContextAccessor _accessor;
-        public MessageService(MessageContext context, IOptions<AppOptions> options, IMapper mapper, IHttpContextAccessor accessor)
+        private readonly IHttpContextAccessor _accessor;
+        public MessageService(
+            MessageContext context,
+            IOptions<AppOptions> options,
+            IMapper mapper,
+            IHttpContextAccessor accessor)
         {
             _context = context;
             _options = options;
@@ -41,9 +43,7 @@ namespace AliasMailApi.Services
 
             MailgunMessage messageFound = null;
 
-            var finalResponse = new BaseResponse<MailgunMessage>();
-
-            IList<ApiError> errors = new List<ApiError>();
+            var finalResponse = BaseResponseFactory<MailgunMessage>.CreateDefaultBaseResponse();
 
             var filter = false;
 
@@ -51,7 +51,7 @@ namespace AliasMailApi.Services
             {
                 messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Token == messageRequest.Token);
                 if (messageFound == null)
-                    errors.Add(new ApiError { description = "Token not found." });
+                    finalResponse.Errors.Add(new ApiError { description = "Token not found." });
 
                 filter = true;
             }
@@ -60,7 +60,7 @@ namespace AliasMailApi.Services
             {
                 messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.MessageId == messageRequest.MessageId);
                 if (messageFound == null)
-                    errors.Add(new ApiError { description = "MessageId not found." });
+                    finalResponse.Errors.Add(new ApiError { description = "MessageId not found." });
 
                 filter = true;
             }
@@ -73,14 +73,7 @@ namespace AliasMailApi.Services
             }
 
             if (!filter)
-            {
-                errors.Add(new ApiError { description = "inform either MessageId or Token to delete." });
-            }
-
-            if (errors.Any())
-            {
-                finalResponse.Errors = errors.ToArray();
-            }
+                finalResponse.Errors.Add(new ApiError { description = "inform either MessageId or Token to delete." });
 
             return finalResponse;
         }
@@ -165,15 +158,15 @@ namespace AliasMailApi.Services
             return response;
         }
 
-        public async Task<BaseResponse<MailgunMessage>> get(string id)
+        public async Task<BaseOneResponse<MailgunMessage>> get(string id)
         {
-            var messageFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Id.Equals(Guid.Parse(id)));
+            var response = new BaseOneResponse<MailgunMessage>();
 
-            var response = new BaseResponse<MailgunMessage>();
+            response.Data = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Id.Equals(Guid.Parse(id)));
 
-            if(messageFound == null)
+            if(response.Data == null)
                 response.Errors.Add(new ApiError{description = "Not found"});
-
+            
             return response;
         }
 

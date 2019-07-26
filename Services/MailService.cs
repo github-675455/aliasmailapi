@@ -86,7 +86,9 @@ namespace AliasMailApi.Services
 
                 try
                 {
-                    newMail = await _context.Mails.AsNoTracking().FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
+                    newMail = await _context.Mails
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
 
                     if (newMail == null)
                     {
@@ -118,7 +120,6 @@ namespace AliasMailApi.Services
 
                     if (domainFound == null)
                     {
-                        //mark to delete mailgunmMessage
                         var errorMessage = string.Format("message id: {0} the domain {1} was not found", message.Id, toRecipient.Host);
                         await SetMailError(newMail, errorMessage);
                         _logger.LogError(errorMessage);

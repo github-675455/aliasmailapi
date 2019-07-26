@@ -65,5 +65,14 @@ namespace aliasmailapi.Extensions
 
             return result;
         }
+
+        public static BaseOneResponse<T> FormatOneResult<T>(this T item)
+        {
+            var result = new BaseOneResponse<T>();
+
+            result.Data = item;
+
+            return result;
+        }
     }
 }

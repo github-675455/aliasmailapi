@@ -1,4 +1,3 @@
-using System;
 
 namespace AliasMailApi.Models.DTO.Response
 {

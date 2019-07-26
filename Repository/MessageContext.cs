@@ -7,7 +7,7 @@ namespace AliasMailApi.Repository
 {
     public class MessageContext : DbContext
     {
-        public MessageContext(DbContextOptions<MessageContext> options) : base(options) { }
+        public MessageContext(DbContextOptions<MessageContext> options) : base(options) {}
 
         public DbSet<BaseMessage> Messages { get; set; }
         public DbSet<MailgunMessage> MailgunMessages { get; set; }

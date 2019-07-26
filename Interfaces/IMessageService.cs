@@ -12,7 +12,7 @@ namespace AliasMailApi.Interfaces
         Task<BaseResponse<MailgunMessage>> create(MailgunMessageRequest messageRequest);
         Task<BaseResponse<MailgunMessage>> delete(MailgunMessageRequest messageRequest);
         Task<BaseResponse<MailgunMessage>> update(MailgunMessageRequest messageRequest);
-        Task<BaseResponse<MailgunMessage>> get(string id);
+        Task<BaseOneResponse<MailgunMessage>> get(string id);
         Task<List<MailgunMessage>> getNextForProcessing();
     }
 }
