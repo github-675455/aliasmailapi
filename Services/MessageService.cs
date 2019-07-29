@@ -84,7 +84,7 @@ namespace AliasMailApi.Services
 
             MailgunMessage messageFound = null;
 
-            var finalResponse = new BaseResponse<MailgunMessage>();
+            var finalResponse = BaseResponseFactory<MailgunMessage>.CreateDefaultBaseResponse();
 
             IList<ApiError> errors = new List<ApiError>();
 
@@ -130,6 +130,7 @@ namespace AliasMailApi.Services
 
         public async Task<BaseResponse<MailgunMessage>> create(MailgunMessageRequest messageRequest)
         {
+            var response = BaseResponseFactory<MailgunMessage>.CreateDefaultBaseResponse();
 
             messageRequest.RemoteIpAddress = _accessor.HttpContext.Connection.RemoteIpAddress.ToString();
 
@@ -138,21 +139,21 @@ namespace AliasMailApi.Services
             var tokenFound = await _context.MailgunMessages.FirstOrDefaultAsync(e => e.Token == message.Token);
 
             if (tokenFound != null)
-                return new BaseResponse<MailgunMessage> { Errors = new ApiError[] { new ApiError { description = "Token already used." } } };
+            {
+                response.Errors.Add(new ApiError { description = "Token already used." });
+                return response;
+            }
 
             var mailgunApiToken = Encoding.ASCII.GetBytes(_options.Value.mailgunApiToken);
             var hash = new HMACSHA256(mailgunApiToken);
             if (BitConverter.ToString(hash.ComputeHash(Encoding.ASCII.GetBytes(message.Timestamp + message.Token))).Replace("-", "").ToLower().Equals(message.Signature))
-            {
                 message.Valid = true;
-            }
 
             message.Validated = DateTime.Now;
 
             await _context.AddAsync(message);
             await _context.SaveChangesAsync();
             
-            var response = new BaseResponse<MailgunMessage>();
             response.Data.Add(message);
 
             return response;
