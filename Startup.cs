@@ -34,8 +34,6 @@ namespace AliasMailApi
             var env = services.BuildServiceProvider()
             .GetRequiredService<IHostingEnvironment>();
 
-            services.AddHealthChecks();
-
             services.AddOptions();
             services.AddStackExchangeRedisCache(options =>
             {
@@ -53,6 +51,9 @@ namespace AliasMailApi
             services.AddDbContextPool<MessageContext>(options => {
                 options.UseMySql(defaultConnection);
             });
+
+            services.AddHealthChecks()
+                .AddMySql(defaultConnection);
 
             services.AddOptions<AppOptions>().Configure(o =>
             {
