@@ -12,6 +12,7 @@ using System;
 using AliasMailApi.Extensions;
 using Microsoft.Extensions.Logging;
 using AliasMailApi.Models.Enum;
+using aliasmailapi.Factory;
 
 namespace AliasMailApi.Services
 {
@@ -63,7 +64,7 @@ namespace AliasMailApi.Services
 
         public async Task<BaseResponse<BaseMessage>> import(BaseMessage message)
         {
-            var response = new BaseResponse<BaseMessage>();
+            var response = BaseResponseFactory<BaseMessage>.CreateDefaultBaseResponse();
             if (message == null)
             {
                 _logger.LogInformation("Parameter is null");
