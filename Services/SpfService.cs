@@ -20,15 +20,85 @@ using System.Text;
 
 namespace AliasMailApi.Services
 {
+    public class IPSubnet
+    {
+        private readonly byte[] _address;
+        private readonly int _prefixLength;
+
+        public IPSubnet(string value)
+        {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
+            string[] parts = value.Split('/');
+            if (parts.Length != 2)
+                throw new ArgumentException("Invalid CIDR notation.", "value");
+
+            _address = IPAddress.Parse(parts[0]).GetAddressBytes();
+            _prefixLength = Convert.ToInt32(parts[1], 10);
+        }
+
+        public bool Contains(string address)
+        {
+            return this.Contains(IPAddress.Parse(address).GetAddressBytes());
+        }
+
+        public bool Contains(byte[] address)
+        {
+            if (address == null)
+                throw new ArgumentNullException("address");
+
+            if (address.Length != _address.Length)
+                return false; // IPv4/IPv6 mismatch
+
+            int index = 0;
+            int bits = _prefixLength;
+
+            for (; bits >= 8; bits -= 8)
+            {
+                if (address[index] != _address[index])
+                    return false;
+                ++index;
+            }
+
+            if (bits > 0)
+            {
+                int mask = (byte)~(255 >> bits);
+                if ((address[index] & mask) != (_address[index] & mask))
+                    return false;
+            }
+
+            return true;
+        }
+    }
+    public class SpfDirective
+    {
+    //    public 
+    }
+    public enum SpfMechanism
+    {
+        ALL,
+        INCLUDE,
+        A,
+        MX,
+        PTR,
+        IPv4,
+        IPv6,
+        EXISTS
+    }
+    public enum SpfQualifier
+    {
+        PLUS,
+        DASH,
+        QUESTION,
+        X
+    }
     public class SpfChecker
     {
-        public SpfChecker(string domain, IPAddress sendingIp)
-        {
-
-        }
         public string Domain;
         public bool Processed;
         public IList<SpfChecker> Includes;
+        public IList<IPSubnet> Ips;
         public SpfResult Result;
         public bool HasAllFlag;
     }
@@ -60,7 +130,7 @@ namespace AliasMailApi.Services
 
                 var domain = domainAndAddress.LastOrDefault();
 
-                Check(domain, received.Ip)
+                Check(domain, received.Ip);
 
                 var baseMessageSpf = new BaseMessageSpf();
                 //baseMessageSpf. = received.Ip;
@@ -74,7 +144,7 @@ namespace AliasMailApi.Services
             return Task.FromResult(result);
         }
 
-        private void Check(string domain, IPAddress sendingIp)
+        private SpfChecker Check(string domain, IPAddress sendingIp)
         {
             
             ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
@@ -87,11 +157,29 @@ namespace AliasMailApi.Services
 
             IResponse response = taskResolution.Result;
 
-            IList<SpfResult> spfRules = response.AnswerRecords
+            var spfRecords = response.AnswerRecords
                 .Select(e => convertToEncodedString(e.Data))
-                .Where(e => isSpfRecord(e))
-                .Select(e => parseSpfRules(e))
-                .ToList();
+                .Where(e => isSpfRecord(e)).ToList();
+            
+            var firstSpfRecord = spfRecords.FirstOrDefault();
+
+            var spfRecordCount = spfRecords.Count();
+
+            var spfChecker = new SpfChecker();
+
+            if(spfRecordCount == 0)
+                spfChecker.Result = SpfResult.NONE;
+                //NONE //https://tools.ietf.org/html/rfc7208#section-4.3
+
+            if(spfRecordCount > 1)
+                spfChecker.Result = SpfResult.PERMERROR;
+                //PERMERROR //https://tools.ietf.org/html/rfc7208#section-4.5
+
+            // IList<SpfResult> spfRules = spfRecords
+            //     .Select(e => parseSpfRules(e))
+            //     .ToList();
+
+            return null;
         }
 
         private SpfResult parseSpfRules(string data)

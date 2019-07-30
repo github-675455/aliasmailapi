@@ -5,6 +5,9 @@ namespace aliasmailapi.Models.Enum
         PASS,
         FAIL,
         SOFTFAIL,
-        NEUTRAL
+        NEUTRAL,
+        TEMPERROR,
+        PERMERROR,
+        NONE
     }
 }
