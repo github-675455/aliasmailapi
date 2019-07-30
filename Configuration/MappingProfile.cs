@@ -1,5 +1,6 @@
 using System;
 using System.Net.Mail;
+using aliasmailapi.Utils;
 using AliasMailApi.Models;
 using AliasMailApi.Models.DTO;
 using AliasMailApi.Models.DTO.Response;
@@ -8,11 +9,6 @@ using AutoMapper;
 
 namespace AliasMailApi.Configuration
 {
-    public enum EmailSection
-    {
-        Address,
-        DisplayName
-    }
     public class MappingProfile: Profile
     {
         public MappingProfile()
@@ -23,7 +19,7 @@ namespace AliasMailApi.Configuration
             CreateMap<MailgunMessage, Mail>()
             .ForMember(e => e.Id, opt => opt.Ignore())
             .ForMember(e => e.BaseMessageId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(e => e.Date, opt => opt.MapFrom(src => CustomDateEmailFormat(src.Date)))
+            .ForMember(e => e.Date, opt => opt.MapFrom(src => GenericUtil.CustomDateEmailFormat(src.Date)))
             .ForMember(e => e.OriginalDate, opt => opt.MapFrom(src => src.Date))
             .ForMember(e => e.ToAddress, opt => opt.MapFrom(src => TreatEmptyMailAddress(src.To, EmailSection.Address)))
             .ForMember(e => e.ToDisplayName, opt => opt.MapFrom(src => TreatEmptyMailAddress(src.To, EmailSection.DisplayName)))
