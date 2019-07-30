@@ -10,6 +10,7 @@ namespace AliasMailApi.Repository
         public MessageContext(DbContextOptions<MessageContext> options) : base(options) {}
 
         public DbSet<BaseMessage> Messages { get; set; }
+        public DbSet<BaseMessageSpf> MessagesSpf { get; set; }
         public DbSet<MailgunMessage> MailgunMessages { get; set; }
         public DbSet<Mailbox> Mailboxes { get; set; }
         public DbSet<Domain> Domains { get; set; }
