@@ -6,7 +6,7 @@ namespace aliasmailapi.Utils
 {
     public static class GenericUtil
     {
-        public static string TreatEmptyMailAddress(string fullEmail, EmailSection emailSection)
+        public static string ParseMailAddress(string fullEmail, EmailSection emailSection)
         {
             if(string.IsNullOrWhiteSpace(fullEmail))
                 return string.Empty;

@@ -20,6 +20,18 @@ using System.Text;
 
 namespace AliasMailApi.Services
 {
+    public class SpfChecker
+    {
+        public SpfChecker(string domain, IPAddress sendingIp)
+        {
+
+        }
+        public string Domain;
+        public bool Processed;
+        public IList<SpfChecker> Includes;
+        public SpfResult Result;
+        public bool HasAllFlag;
+    }
     public class SpfService : ISpfService
     {
         private readonly MessageContext _context;
@@ -41,22 +53,14 @@ namespace AliasMailApi.Services
                 var convertedMessage = (MailgunMessage)message;
                 var received = parseFirstReceived(convertedMessage.Received);
 
-                ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
+                var domainAndAddress = GenericUtil.ParseMailAddress(convertedMessage.Sender, EmailSection.Address).Split("@");
 
-                GenericUtil.TreatEmptyMailAddress(convertedMessage.Sender, EmailSection.Address);
+                if(domainAndAddress.Length != 2)
+                    throw new Exception("Invalid format, not a valid sender address.");
 
-                request.Questions.Add(new Question(DNS.Protocol.Domain.FromString(convertedMessage.Sender), RecordType.TXT));
-                request.RecursionDesired = true;
+                var domain = domainAndAddress.LastOrDefault();
 
-                var taskResolution = request.Resolve();
-                Task.WaitAll(taskResolution);
-
-                IResponse response = taskResolution.Result;
-
-                // IList<string> spfRules = response.AnswerRecords
-                //     .Where(e => isSpfRule(e.Data))
-                //     .Select(e => parseSpfRules(e.Data))
-                //     .ToList();
+                Check(domain, received.Ip)
 
                 var baseMessageSpf = new BaseMessageSpf();
                 //baseMessageSpf. = received.Ip;
@@ -70,21 +74,41 @@ namespace AliasMailApi.Services
             return Task.FromResult(result);
         }
 
-        private SpfResult parseSpfRules(byte[] data)
+        private void Check(string domain, IPAddress sendingIp)
         {
-            var dataEncoded = Encoding.UTF8.GetString(data);
+            
+            ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
 
+            request.Questions.Add(new Question(DNS.Protocol.Domain.FromString(domain), RecordType.TXT));
+            request.RecursionDesired = true;
 
+            var taskResolution = request.Resolve();
+            Task.WaitAll(taskResolution);
+
+            IResponse response = taskResolution.Result;
+
+            IList<SpfResult> spfRules = response.AnswerRecords
+                .Select(e => convertToEncodedString(e.Data))
+                .Where(e => isSpfRecord(e))
+                .Select(e => parseSpfRules(e))
+                .ToList();
+        }
+
+        private SpfResult parseSpfRules(string data)
+        {
 
             return SpfResult.PASS;
         }
 
-        private bool isSpfRule(byte[] data)
-        {
-            return Encoding.UTF8.GetString(data).Trim().IndexOf("v=spf1") != -1;
+        private string convertToEncodedString(byte[] data){
+            return Encoding.UTF8.GetString(data);
         }
 
-        //from mta2.e.mozilla.org (mta2.e.mozilla.org [68.232.195.239]) by mxa.mailgun.org with ESMTP id 5d324468.7f2d1cc65ca8-smtp-in-n02; Fri, 19 Jul 2019 22:30:00 -0000 (UTC)
+        private bool isSpfRecord(string data)
+        {
+            return data.Trim().IndexOf("v=spf1") != -1;
+        }
+
         private ReceivedDto parseFirstReceived(string received)
         {
             var receivedSatanized = received.ToLower();
@@ -126,7 +150,7 @@ namespace AliasMailApi.Services
 
             return new ReceivedDto{
                 Host = host,
-                Ip = strippedIp,
+                Ip = IPAddress.Parse(strippedIp),
                 Received = dataReceived.Value
             };
         }
