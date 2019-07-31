@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using Polly;
+using Polly.Timeout;
 
 namespace AliasMailApi.Services
 {
@@ -218,10 +219,15 @@ namespace AliasMailApi.Services
         {
             IResponse response = null;
 
-            Policy
+            var timeoutPolicy = Policy.Timeout(1);
+
+            var waitAndRetryPolicy = Policy
                 .Handle<ResponseException>()
-                .WaitAndRetry(3, (count, wait) => TimeSpan.FromMilliseconds(100))
-                .Execute(() =>
+                .Or<TimeoutRejectedException>()
+                .WaitAndRetry(3, (c, t) => TimeSpan.FromMilliseconds(100));
+
+            waitAndRetryPolicy.Execute(() =>
+                timeoutPolicy.Execute(() =>
                 {
                     ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
 
@@ -233,7 +239,8 @@ namespace AliasMailApi.Services
                     taskResolution.Wait();
 
                     response = taskResolution.Result;
-                });
+                })
+            );
 
             return response.AnswerRecords;
         }
