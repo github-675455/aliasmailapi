@@ -17,6 +17,8 @@ using AliasMailApi.Models.Enum;
 using DNS.Protocol.ResourceRecords;
 using System.Collections.Generic;
 using System.Text;
+using System.Net.Sockets;
+using Polly;
 
 namespace AliasMailApi.Services
 {
@@ -71,15 +73,132 @@ namespace AliasMailApi.Services
             return true;
         }
     }
-    public class SpfDirective
+    public abstract class SpfDirective<T>
     {
-    //    public 
+        public SpfQualifier Qualifier = SpfQualifier.PLUS;
+        public SpfMechanism Mechanism;
+        public T MecanismParameter;
+        public int netMask;
+        public abstract bool Matches(string domain, string sender);
+        public SpfResult Result;
+
+        protected string convertToEncodedString(byte[] data)
+        {
+            return Encoding.UTF8.GetString(data);
+        }
     }
+    public sealed class SpfIpv4 : SpfDirective<IPSubnet>
+    {
+        public SpfIpv4()
+        {
+            Mechanism = SpfMechanism.IPv4;
+        }
+        public override bool Matches(string domain, string sender)
+        {
+            var localResult = MecanismParameter.Contains(Encoding.UTF8.GetBytes(sender));
+            
+            Result = localResult ? SpfResult.PASS : SpfResult.NONE;
+
+            return localResult;
+        }
+    }
+
+    public sealed class SpfIpv6 : SpfDirective<IPSubnet>
+    {
+        public SpfIpv6()
+        {
+            Mechanism = SpfMechanism.IPv6;
+        }
+        public override bool Matches(string domain, string sender)
+        {
+            var localResult = MecanismParameter.Contains(Encoding.UTF8.GetBytes(sender));
+            
+            Result = localResult ? SpfResult.PASS : SpfResult.NONE;
+            
+            return localResult;
+        }
+    }
+
+    public sealed class SpfRecordAorAAAA : SpfDirective<string>
+    {
+        public SpfRecordAorAAAA()
+        {
+            Mechanism = SpfMechanism.AorAAAA;
+        }
+        public override bool Matches(string domain, string sender)
+        {
+            IPAddress senderIp = IPAddress.Parse(sender);
+            var isIpv4 = senderIp.AddressFamily == AddressFamily.InterNetwork;
+
+            netMask = isIpv4 ? 32: 128;
+
+            var response = DNSManager.Resolve(domain, isIpv4 ?  RecordType.A : RecordType.AAAA);
+
+            var ipsRecords = response
+                .Select(e => IPAddress.Parse(convertToEncodedString(e.Data)))
+                .ToList();
+
+            var ipsCount = ipsRecords.Count();
+
+            if(ipsCount == 0)
+                Result = SpfResult.NONE; //https://tools.ietf.org/html/rfc7208#section-4.3
+
+            if(ipsCount > 1)
+                Result = SpfResult.PERMERROR; //https://tools.ietf.org/html/rfc7208#section-4.5
+
+            var ipMatch = ipsRecords.Any(e => e.Equals(senderIp));
+
+            if(ipMatch)
+                Result = SpfResult.PASS;
+
+            return ipMatch;
+        }
+    }
+
+    public sealed class SpfRecordMX : SpfDirective<string>
+    {
+        public SpfRecordMX()
+        {
+            Mechanism = SpfMechanism.MX;
+        }
+
+        public override bool Matches(string domain, string sender)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public sealed class SpfRecordInclude : SpfDirective<string>
+    {
+        public SpfRecordInclude()
+        {
+            Mechanism = SpfMechanism.INCLUDE;
+        }
+
+        public override bool Matches(string domain, string sender)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public sealed class SpfRecordAll : SpfDirective<string>
+    {
+        public SpfRecordAll()
+        {
+            Mechanism = SpfMechanism.ALL;
+        }
+
+        public override bool Matches(string domain, string sender)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public enum SpfMechanism
     {
         ALL,
         INCLUDE,
-        A,
+        AorAAAA,
         MX,
         PTR,
         IPv4,
@@ -91,16 +210,33 @@ namespace AliasMailApi.Services
         PLUS,
         DASH,
         QUESTION,
-        X
+        TILDE
     }
-    public class SpfChecker
+    public static class DNSManager
     {
-        public string Domain;
-        public bool Processed;
-        public IList<SpfChecker> Includes;
-        public IList<IPSubnet> Ips;
-        public SpfResult Result;
-        public bool HasAllFlag;
+        public static IList<IResourceRecord> Resolve(string domain, RecordType recordType)
+        {
+            IResponse response = null;
+
+            Policy
+                .Handle<ResponseException>()
+                .WaitAndRetry(3, (count, wait) => TimeSpan.FromMilliseconds(100))
+                .Execute(() =>
+                {
+                    ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
+
+                    request.Questions.Add(new Question(DNS.Protocol.Domain.FromString(domain), recordType));
+                    request.RecursionDesired = true;           
+
+                    var taskResolution = request.Resolve();
+                    taskResolution.Start();
+                    taskResolution.Wait();
+
+                    response = taskResolution.Result;
+                });
+
+            return response.AnswerRecords;
+        }
     }
     public class SpfService : ISpfService
     {
@@ -147,37 +283,7 @@ namespace AliasMailApi.Services
         private SpfChecker Check(string domain, IPAddress sendingIp)
         {
             
-            ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
-
-            request.Questions.Add(new Question(DNS.Protocol.Domain.FromString(domain), RecordType.TXT));
-            request.RecursionDesired = true;
-
-            var taskResolution = request.Resolve();
-            Task.WaitAll(taskResolution);
-
-            IResponse response = taskResolution.Result;
-
-            var spfRecords = response.AnswerRecords
-                .Select(e => convertToEncodedString(e.Data))
-                .Where(e => isSpfRecord(e)).ToList();
             
-            var firstSpfRecord = spfRecords.FirstOrDefault();
-
-            var spfRecordCount = spfRecords.Count();
-
-            var spfChecker = new SpfChecker();
-
-            if(spfRecordCount == 0)
-                spfChecker.Result = SpfResult.NONE;
-                //NONE //https://tools.ietf.org/html/rfc7208#section-4.3
-
-            if(spfRecordCount > 1)
-                spfChecker.Result = SpfResult.PERMERROR;
-                //PERMERROR //https://tools.ietf.org/html/rfc7208#section-4.5
-
-            // IList<SpfResult> spfRules = spfRecords
-            //     .Select(e => parseSpfRules(e))
-            //     .ToList();
 
             return null;
         }
@@ -187,11 +293,6 @@ namespace AliasMailApi.Services
 
             return SpfResult.PASS;
         }
-
-        private string convertToEncodedString(byte[] data){
-            return Encoding.UTF8.GetString(data);
-        }
-
         private bool isSpfRecord(string data)
         {
             return data.Trim().IndexOf("v=spf1") != -1;
