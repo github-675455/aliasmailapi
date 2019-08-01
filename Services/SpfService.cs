@@ -11,15 +11,12 @@ using System.Text.RegularExpressions;
 using aliasmailapi.Utils;
 using System.Net;
 using aliasmailapi.Models.Enum;
-using DNS.Client;
 using DNS.Protocol;
 using AliasMailApi.Models.Enum;
-using DNS.Protocol.ResourceRecords;
-using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
-using Polly;
-using Polly.Timeout;
+using DNS.Protocol.ResourceRecords;
+using System.Collections.Generic;
 
 namespace AliasMailApi.Services
 {
@@ -82,11 +79,6 @@ namespace AliasMailApi.Services
         public int netMask;
         public abstract bool Matches(string domain, string sender);
         public SpfResult Result;
-
-        protected string convertToEncodedString(byte[] data)
-        {
-            return Encoding.UTF8.GetString(data);
-        }
     }
     public sealed class SpfIpv4 : SpfDirective<IPSubnet>
     {
@@ -135,8 +127,8 @@ namespace AliasMailApi.Services
 
             var response = DNSManager.Resolve(domain, isIpv4 ?  RecordType.A : RecordType.AAAA);
 
-            var ipsRecords = response
-                .Select(e => IPAddress.Parse(convertToEncodedString(e.Data)))
+            var ipsRecords = response.Result
+                .Select(e => new IPAddress(e.Data))
                 .ToList();
 
             var ipsCount = ipsRecords.Count();
@@ -165,7 +157,36 @@ namespace AliasMailApi.Services
 
         public override bool Matches(string domain, string sender)
         {
-            throw new NotImplementedException();
+            IPAddress senderIp = IPAddress.Parse(sender);
+            var isIpv4 = senderIp.AddressFamily == AddressFamily.InterNetwork;
+
+            var task = DNSManager.Resolve(domain, RecordType.MX);
+
+            List<Task<IList<IResourceRecord>>> asyncDnsRequests = new List<Task<IList<IResourceRecord>>>();
+
+            foreach(var record in task.Result)
+            {
+                var mxRecord = (MailExchangeResourceRecord)record;
+                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), isIpv4 ? RecordType.A : RecordType.AAAA);
+                asyncDnsRequests.Add(resolveMxRecord);
+            }
+
+            Task.WaitAll(asyncDnsRequests.ToArray());
+
+            foreach(var result in asyncDnsRequests)
+            {
+                foreach(var aOrAaaaResult in result.Result)
+                {
+                    var ipReourceRecord = (IPAddressResourceRecord)aOrAaaaResult;
+                    if(ipReourceRecord.IPAddress == senderIp)
+                    {
+                        Result = SpfResult.PASS;
+                        return true;
+                    }
+                }
+            }
+            //Result = SpfResult.NONE;
+            return false;
         }
     }
 
@@ -213,38 +234,7 @@ namespace AliasMailApi.Services
         QUESTION,
         TILDE
     }
-    public static class DNSManager
-    {
-        public static IList<IResourceRecord> Resolve(string domain, RecordType recordType)
-        {
-            IResponse response = null;
-
-            var timeoutPolicy = Policy.Timeout(1);
-
-            var waitAndRetryPolicy = Policy
-                .Handle<ResponseException>()
-                .Or<TimeoutRejectedException>()
-                .WaitAndRetry(3, (c, t) => TimeSpan.FromMilliseconds(100));
-
-            waitAndRetryPolicy.Execute(() =>
-                timeoutPolicy.Execute(() =>
-                {
-                    ClientRequest request = new ClientRequest(DnsServers.CloudFlare);
-
-                    request.Questions.Add(new Question(DNS.Protocol.Domain.FromString(domain), recordType));
-                    request.RecursionDesired = true;           
-
-                    var taskResolution = request.Resolve();
-                    taskResolution.Start();
-                    taskResolution.Wait();
-
-                    response = taskResolution.Result;
-                })
-            );
-
-            return response.AnswerRecords;
-        }
-    }
+    
     public class SpfService : ISpfService
     {
         private readonly MessageContext _context;
@@ -273,7 +263,7 @@ namespace AliasMailApi.Services
 
                 var domain = domainAndAddress.LastOrDefault();
 
-                Check(domain, received.Ip);
+                //Check(domain, received.Ip);
 
                 var baseMessageSpf = new BaseMessageSpf();
                 //baseMessageSpf. = received.Ip;
@@ -287,17 +277,8 @@ namespace AliasMailApi.Services
             return Task.FromResult(result);
         }
 
-        private SpfChecker Check(string domain, IPAddress sendingIp)
-        {
-            
-            
-
-            return null;
-        }
-
         private SpfResult parseSpfRules(string data)
         {
-
             return SpfResult.PASS;
         }
         private bool isSpfRecord(string data)
