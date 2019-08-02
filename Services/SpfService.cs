@@ -72,10 +72,12 @@ namespace AliasMailApi.Services
             return true;
         }
     }
-    public static class SpfRecordParser
+    public static class SpfRecordParserAndEvaluate
     {
-        public static Parse(string record)
+        public static SpfRecordResult Execute(string record)
         {
+            var result = new SpfRecordResult();
+
             record = record.Trim().ToLower();
 
             if(!record.NotEmpty())
@@ -88,29 +90,90 @@ namespace AliasMailApi.Services
 
             if(segments.Length == 1)
             {
-                //neutral
+                result.Result = SpfResult.NEUTRAL;
+                return result;
             }
 
-            if(record.IndexOf("v=spf1") != -1){
+            foreach(var segment in segments)
+            {
+                var maches = Regex.Matches(segment, @"^(?<qualifier>[\+\-\~\?])?(?<mechanism>all|include|a|mx|ptr|ip4|ip6|exists{1})(\:(?<mechanismParameter>[a-zA-Z0-9\-\.]+))?");
+                var firstMatch = maches.FirstOrDefault();
+
+                var qualifier = firstMatch.Groups["qualifier"].Value;
+                var selectedQualifier = selectQualifier(qualifier);
+                var mechanism = firstMatch.Groups["mechanism"].Value;
+                var mechanismParameter = firstMatch.Groups["mechanismParameter"].Value;
+
+                SpfGenericDirective currentDirective = null;
+
+                if(mechanism.Equals("ipv4"))
+                    currentDirective = new SpfIpv4(selectedQualifier, new IPSubnet(mechanismParameter));
+                if(mechanism.Equals("ipv6"))
+                    currentDirective = new SpfIpv6(selectedQualifier, new IPSubnet(mechanismParameter));
+                if(mechanism.Equals("a"))
+                    currentDirective = new SpfRecordAorAAAA(selectedQualifier, mechanismParameter);
+                else if(mechanism.Equals("mx"))
+                    currentDirective = new SpfRecordMX(selectedQualifier, mechanismParameter);
+                else if(mechanism.Equals("include"))
+                    currentDirective = new SpfRecordInclude(selectedQualifier, mechanismParameter);
+                else if(mechanism.Equals("all"))
+                    currentDirective = new SpfRecordAll(selectedQualifier, mechanismParameter);
+                else if(mechanism.Equals("ptr"))
+                    throw new NotImplementedException("ptr not implemented");
+                else if(mechanism.Equals("exists"))
+                    throw new NotImplementedException("ptr not implemented");
+
+                result.Directives.Add(currentDirective);
 
             }
+        
+            return result;
+        }
 
-            
+        private static SpfQualifier selectQualifier(string qualifier)
+        {
+            if(qualifier.Equals("+"))
+                return SpfQualifier.POSITIVE;
+            else if(qualifier.Equals("-"))
+                return SpfQualifier.NEGATIVE;
+            else if(qualifier.Equals("~"))
+                return SpfQualifier.TILDE;
+            else if(qualifier.Equals("?"))
+                return SpfQualifier.QUESTION;
+            return SpfQualifier.POSITIVE;
         }
 
         private static bool isSpfRecord(string data)
         {
-            return data.IndexOf("v=spf1") != -1;
+            return !Regex.IsMatch(data, "$v=spf1\b");
         }
     }
-    public abstract class SpfDirective<T>
+    public class SpfRecordResult
     {
+        private const int DnsRequestsLimit = 10;
+        public List<SpfGenericDirective> Directives = new List<SpfGenericDirective>();
+
+        public SpfResult Result;
+    }
+    public interface SpfGenericDirective{
+
+    }
+    public abstract class SpfDirective<T> : SpfGenericDirective
+    {
+        public string Domain;
+        public IPAddress SenderIp;
+        public int DnsRequestsCount;
+        public bool IsIpv4 { get => SenderIp != null ? SenderIp.AddressFamily == AddressFamily.InterNetwork : false; }
         public SpfQualifier Qualifier = SpfQualifier.POSITIVE;
-        public SpfMechanism Mechanism;
         public T MecanismParameter;
         public int NetMask;
-        public bool Match;
-        public abstract bool Matches(string domain, string sender);
+        public abstract Task<bool> Matches();
+        public SpfDirective() { }
+        public SpfDirective(SpfQualifier qualifier, T parameter)
+        {
+            Qualifier = qualifier;
+            MecanismParameter = parameter;
+        }
         protected void setResultOfQualifier(bool matches)
         {
             if(Qualifier == SpfQualifier.NEGATIVE)
@@ -137,97 +200,71 @@ namespace AliasMailApi.Services
     }
     public sealed class SpfIpv4 : SpfDirective<IPSubnet>
     {
-        public SpfIpv4()
+        public SpfIpv4(SpfQualifier qualifier, IPSubnet parameter): base(qualifier, parameter) { }
+        public override Task<bool> Matches()
         {
-            Mechanism = SpfMechanism.IPv4;
-        }
-        public override bool Matches(string domain, string sender)
-        {
-            var localResult = MecanismParameter.Contains(Encoding.ASCII.GetBytes(sender));
+            var localResult = MecanismParameter.Contains(Encoding.ASCII.GetBytes(SenderIp.ToString()));
 
             setResultOfQualifier(localResult);
 
-            return localResult;
+            return Task.FromResult(localResult);
         }
     }
 
     public sealed class SpfIpv6 : SpfDirective<IPSubnet>
     {
-        public SpfIpv6()
+        public SpfIpv6(SpfQualifier qualifier, IPSubnet parameter): base(qualifier, parameter) { }
+        public override Task<bool> Matches()
         {
-            Mechanism = SpfMechanism.IPv6;
-        }
-        public override bool Matches(string domain, string sender)
-        {
-            var localResult = MecanismParameter.Contains(Encoding.UTF8.GetBytes(sender));
+            var localResult = MecanismParameter.Contains(Encoding.UTF8.GetBytes(SenderIp.ToString()));
 
             setResultOfQualifier(localResult);
             
-            return localResult;
+            return Task.FromResult(localResult);
         }
     }
 
     public sealed class SpfRecordAorAAAA : SpfDirective<string>
     {
-        public SpfRecordAorAAAA()
+        public SpfRecordAorAAAA(SpfQualifier qualifier, string parameter): base(qualifier, parameter) { }
+        public override Task<bool> Matches()
         {
-            Mechanism = SpfMechanism.AorAAAA;
-        }
-        public override bool Matches(string domain, string sender)
-        {
-            IPAddress senderIp = IPAddress.Parse(sender);
-            var isIpv4 = senderIp.AddressFamily == AddressFamily.InterNetwork;
-
-            NetMask = isIpv4 ? 32: 128;
+            NetMask = IsIpv4 ? 32: 128;
 
             if(string.IsNullOrWhiteSpace(MecanismParameter))
-                MecanismParameter = domain;
+                MecanismParameter = Domain;
 
-            var response = DNSManager.Resolve(MecanismParameter, isIpv4 ?  RecordType.A : RecordType.AAAA);
+            var response = DNSManager.Resolve(MecanismParameter, IsIpv4 ?  RecordType.A : RecordType.AAAA);
+
+            DnsRequestsCount++;
 
             var ipsRecords = response.Result
                 .Select(e => new IPAddress(e.Data))
                 .ToList();
 
-            var ipsCount = ipsRecords.Count();
-
-            if(ipsCount == 0)
-                Result = SpfResult.NONE; //https://tools.ietf.org/html/rfc7208#section-4.3
-
-            if(ipsCount > 1)
-                Result = SpfResult.PERMERROR; //https://tools.ietf.org/html/rfc7208#section-4.5
-
-            var ipMatch = ipsRecords.Any(e => e.Equals(senderIp));
-
-            if(ipMatch)
-                Result = SpfResult.PASS;
+            var ipMatch = ipsRecords.Any(e => e.Equals(SenderIp));
 
             setResultOfQualifier(ipMatch);
 
-            return ipMatch;
+            return Task.FromResult(ipMatch);
         }
     }
 
     public sealed class SpfRecordMX : SpfDirective<string>
     {
-        public SpfRecordMX()
-        {
-            Mechanism = SpfMechanism.MX;
-        }
+        public SpfRecordMX(SpfQualifier qualifier, string parameter): base(qualifier, parameter) { }
 
-        public override bool Matches(string domain, string sender)
+        public override Task<bool> Matches()
         {
-            IPAddress senderIp = IPAddress.Parse(sender);
-            var isIpv4 = senderIp.AddressFamily == AddressFamily.InterNetwork;
-
-            var task = DNSManager.Resolve(domain, RecordType.MX);
+            var task = DNSManager.Resolve(Domain, RecordType.MX);
 
             List<Task<IList<IResourceRecord>>> asyncDnsRequests = new List<Task<IList<IResourceRecord>>>();
 
             foreach(var record in task.Result)
             {
                 var mxRecord = (MailExchangeResourceRecord)record;
-                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), isIpv4 ? RecordType.A : RecordType.AAAA);
+                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), IsIpv4 ? RecordType.A : RecordType.AAAA);
+                DnsRequestsCount++;
                 asyncDnsRequests.Add(resolveMxRecord);
             }
 
@@ -238,54 +275,51 @@ namespace AliasMailApi.Services
                 foreach(var aOrAaaaResult in result.Result)
                 {
                     var ipReourceRecord = (IPAddressResourceRecord)aOrAaaaResult;
-                    if(ipReourceRecord.IPAddress == senderIp)
+                    if(ipReourceRecord.IPAddress == SenderIp)
                     {
-                        Result = SpfResult.PASS;
-                        return true;
+                        setResultOfQualifier(true);
+                        return Task.FromResult(true);
                     }
                 }
             }
-            //Result = SpfResult.NONE;
-            return false;
+            setResultOfQualifier(false);
+            return Task.FromResult(false);
         }
     }
 
     public sealed class SpfRecordInclude : SpfDirective<string>
     {
-        public SpfRecordInclude()
-        {
-            Mechanism = SpfMechanism.INCLUDE;
-        }
+        public SpfRecordInclude(SpfQualifier qualifier, string parameter): base(qualifier, parameter) { }
 
-        public override bool Matches(string domain, string sender)
+        public override Task<bool> Matches()
         {
-            var task = DNSManager.Resolve(domain, RecordType.TXT);
+            var task = DNSManager.Resolve(Domain, RecordType.TXT);
+            DnsRequestsCount++;
 
             List<Task<IList<IResourceRecord>>> asyncDnsRequests = new List<Task<IList<IResourceRecord>>>();
 
             foreach(var record in task.Result)
             {
                 var mxRecord = (MailExchangeResourceRecord)record;
-                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), isIpv4 ? RecordType.A : RecordType.AAAA);
+                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), IsIpv4 ? RecordType.A : RecordType.AAAA);
+                DnsRequestsCount++;
                 asyncDnsRequests.Add(resolveMxRecord);
             }
 
             Task.WaitAll(asyncDnsRequests.ToArray());
 
-            return true;
+            return Task.FromResult(true);
         }
     }
 
     public sealed class SpfRecordAll : SpfDirective<string>
     {
-        public SpfRecordAll()
-        {
-            Mechanism = SpfMechanism.ALL;
-        }
+        public SpfRecordAll(SpfQualifier qualifier, string parameter): base(qualifier, parameter) { }
 
-        public override bool Matches(string domain, string sender)
+        public override Task<bool> Matches()
         {
-            throw new NotImplementedException();
+            setResultOfQualifier(true);
+            return Task.FromResult(true);
         }
     }
 
@@ -336,18 +370,44 @@ namespace AliasMailApi.Services
 
                 var domain = domainAndAddress.LastOrDefault();
 
+                var resolvedTxtRecords = DNSManager.Resolve(domain, RecordType.TXT);
+                var countResolvedTxtRecords = resolvedTxtRecords.Result.Count();
+
+                if(countResolvedTxtRecords == 0)
+                {
+                    result.Result = SpfResult.NONE; //https://tools.ietf.org/html/rfc7208#section-4.3
+                    return SaveResultingSpf(result);
+                }
+
+                if(countResolvedTxtRecords > 1)
+                {
+                    result.Result = SpfResult.PERMERROR; //https://tools.ietf.org/html/rfc7208#section-4.5
+                    return SaveResultingSpf(result);
+                }
+
+                var record = resolvedTxtRecords.Result.FirstOrDefault();
+                
+                var parsedRecord = SpfRecordParserAndEvaluate.Execute(Encoding.UTF8.GetString(record.Data));
+                
+
                 //Check(domain, received.Ip);
 
-                var baseMessageSpf = new BaseMessageSpf();
-                //baseMessageSpf. = received.Ip;
-                _context.MessagesSpf.Add(baseMessageSpf);
-                _context.SaveChanges();
+                
+                
             }
             else
             {
                 throw new NotImplementedException();
             }
             return Task.FromResult(result);
+        }
+
+        private async Task<BaseMessageSpf> SaveResultingSpf(BaseMessageSpf baseMessageSpf)
+        {
+            baseMessageSpf.Validated = DateTimeOffset.Now;
+            _context.MessagesSpf.Add(baseMessageSpf);
+            await _context.SaveChangesAsync();
+            return baseMessageSpf;
         }
 
         private SpfResult parseSpfRules(string data)
