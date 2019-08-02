@@ -17,6 +17,7 @@ using System.Text;
 using System.Net.Sockets;
 using DNS.Protocol.ResourceRecords;
 using System.Collections.Generic;
+using AliasMailApi.Extensions;
 
 namespace AliasMailApi.Services
 {
@@ -71,14 +72,68 @@ namespace AliasMailApi.Services
             return true;
         }
     }
+    public static class SpfRecordParser
+    {
+        public static Parse(string record)
+        {
+            record = record.Trim().ToLower();
+
+            if(!record.NotEmpty())
+                throw new Exception("Empty record");
+
+            if(isSpfRecord(record))
+                throw new Exception("Is not spf record");
+            
+            var segments = record.Split(" ");
+
+            if(segments.Length == 1)
+            {
+                //neutral
+            }
+
+            if(record.IndexOf("v=spf1") != -1){
+
+            }
+
+            
+        }
+
+        private static bool isSpfRecord(string data)
+        {
+            return data.IndexOf("v=spf1") != -1;
+        }
+    }
     public abstract class SpfDirective<T>
     {
-        public SpfQualifier Qualifier = SpfQualifier.PLUS;
+        public SpfQualifier Qualifier = SpfQualifier.POSITIVE;
         public SpfMechanism Mechanism;
         public T MecanismParameter;
-        public int netMask;
+        public int NetMask;
+        public bool Match;
         public abstract bool Matches(string domain, string sender);
-        public SpfResult Result;
+        protected void setResultOfQualifier(bool matches)
+        {
+            if(Qualifier == SpfQualifier.NEGATIVE)
+                if(matches)
+                    Result = SpfResult.FAIL;
+                else
+                    Result = SpfResult.PASS;
+            else if(Qualifier == SpfQualifier.POSITIVE)
+                if(matches)
+                    Result = SpfResult.PASS;
+                else
+                    Result = SpfResult.FAIL;
+            else if(Qualifier == SpfQualifier.TILDE)
+                if(matches)
+                    Result = SpfResult.SOFTFAIL;
+                else
+                    Result = SpfResult.PASS;
+            else if(Qualifier == SpfQualifier.QUESTION)
+                if(matches)
+                    Result = SpfResult.NEUTRAL;
+            
+        }
+        public SpfResult? Result;
     }
     public sealed class SpfIpv4 : SpfDirective<IPSubnet>
     {
@@ -88,9 +143,9 @@ namespace AliasMailApi.Services
         }
         public override bool Matches(string domain, string sender)
         {
-            var localResult = MecanismParameter.Contains(Encoding.UTF8.GetBytes(sender));
-            
-            Result = localResult ? SpfResult.PASS : SpfResult.NONE;
+            var localResult = MecanismParameter.Contains(Encoding.ASCII.GetBytes(sender));
+
+            setResultOfQualifier(localResult);
 
             return localResult;
         }
@@ -105,8 +160,8 @@ namespace AliasMailApi.Services
         public override bool Matches(string domain, string sender)
         {
             var localResult = MecanismParameter.Contains(Encoding.UTF8.GetBytes(sender));
-            
-            Result = localResult ? SpfResult.PASS : SpfResult.NONE;
+
+            setResultOfQualifier(localResult);
             
             return localResult;
         }
@@ -123,9 +178,12 @@ namespace AliasMailApi.Services
             IPAddress senderIp = IPAddress.Parse(sender);
             var isIpv4 = senderIp.AddressFamily == AddressFamily.InterNetwork;
 
-            netMask = isIpv4 ? 32: 128;
+            NetMask = isIpv4 ? 32: 128;
 
-            var response = DNSManager.Resolve(domain, isIpv4 ?  RecordType.A : RecordType.AAAA);
+            if(string.IsNullOrWhiteSpace(MecanismParameter))
+                MecanismParameter = domain;
+
+            var response = DNSManager.Resolve(MecanismParameter, isIpv4 ?  RecordType.A : RecordType.AAAA);
 
             var ipsRecords = response.Result
                 .Select(e => new IPAddress(e.Data))
@@ -143,6 +201,8 @@ namespace AliasMailApi.Services
 
             if(ipMatch)
                 Result = SpfResult.PASS;
+
+            setResultOfQualifier(ipMatch);
 
             return ipMatch;
         }
@@ -199,7 +259,20 @@ namespace AliasMailApi.Services
 
         public override bool Matches(string domain, string sender)
         {
-            throw new NotImplementedException();
+            var task = DNSManager.Resolve(domain, RecordType.TXT);
+
+            List<Task<IList<IResourceRecord>>> asyncDnsRequests = new List<Task<IList<IResourceRecord>>>();
+
+            foreach(var record in task.Result)
+            {
+                var mxRecord = (MailExchangeResourceRecord)record;
+                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), isIpv4 ? RecordType.A : RecordType.AAAA);
+                asyncDnsRequests.Add(resolveMxRecord);
+            }
+
+            Task.WaitAll(asyncDnsRequests.ToArray());
+
+            return true;
         }
     }
 
@@ -229,8 +302,8 @@ namespace AliasMailApi.Services
     }
     public enum SpfQualifier
     {
-        PLUS,
-        DASH,
+        POSITIVE,
+        NEGATIVE,
         QUESTION,
         TILDE
     }
@@ -281,11 +354,7 @@ namespace AliasMailApi.Services
         {
             return SpfResult.PASS;
         }
-        private bool isSpfRecord(string data)
-        {
-            return data.Trim().IndexOf("v=spf1") != -1;
-        }
-
+        
         private ReceivedDto parseFirstReceived(string received)
         {
             var receivedSatanized = received.ToLower();
