@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Internal;
 using Microsoft.Extensions.Options;
 using aliasmailapi.Extensions;
 using Microsoft.AspNetCore.Http;
+using aliasmailapi.Interfaces;
+using aliasmailapi.Utils;
 
 namespace AliasMailApi
 {
@@ -60,7 +62,7 @@ namespace AliasMailApi
                 o.mailgunApiToken = mailgunApiTokenEnviroment;
                 o.consumerToken = consumerToken;
                 o.mailgunApiDomain = mailgunApiDomainEnviroment;
-                o.buildInfo = Configuration.GetSection("BuildInfo").Value;
+                o.buildInfo = HealthJsonResult.buildInfo = Configuration.GetSection("BuildInfo").Value;
             });
 
             var mappingConfig = new MapperConfiguration(mc =>
@@ -72,6 +74,8 @@ namespace AliasMailApi
             services.AddSingleton(mapper);
 
             services.Configure<AppOptions>(Configuration);
+            services.Configure<DnsOptions>(Configuration.GetSection("Dns"));
+            services.AddSingleton<IDNSManager, DNSManager>();
             services.AddTransient<IMessageService, MessageService>();
             services.AddTransient<IDomainService, DomainService>();
             services.AddTransient<IMailboxService, MailboxService>();
@@ -90,7 +94,7 @@ namespace AliasMailApi
             }).AddJsonFormatters().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, MessageContext context, IOptions<AppOptions> options)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, MessageContext context)
         {
             var dropDatabase = Environment.GetEnvironmentVariable("DropDatabase");
             if(!string.IsNullOrWhiteSpace(dropDatabase))
@@ -117,7 +121,7 @@ namespace AliasMailApi
                 app.UseHsts();
             }
 
-            app.UseHealthChecks("/health", new HealthJsonResult(options));
+            app.UseHealthChecks("/health", new HealthJsonResult());
 
             app.UseEndpointRouting();
             app.UseMiddleware<AutorizationMiddleware>();

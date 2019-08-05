@@ -168,7 +168,10 @@ namespace AliasMailApi.Services
         public T MecanismParameter;
         public int NetMask;
         public abstract Task<bool> Matches();
-        public SpfDirective() { }
+        protected readonly DNSManager _dnsManager;
+        public SpfDirective(DNSManager dnsManager) {
+            _dnsManager = dnsManager;
+        }
         public SpfDirective(SpfQualifier qualifier, T parameter)
         {
             Qualifier = qualifier;
@@ -234,7 +237,7 @@ namespace AliasMailApi.Services
             if(string.IsNullOrWhiteSpace(MecanismParameter))
                 MecanismParameter = Domain;
 
-            var response = DNSManager.Resolve(MecanismParameter, IsIpv4 ?  RecordType.A : RecordType.AAAA);
+            var response = _dnsManager.Resolve(MecanismParameter, IsIpv4 ?  RecordType.A : RecordType.AAAA);
 
             DnsRequestsCount++;
 
@@ -256,14 +259,14 @@ namespace AliasMailApi.Services
 
         public override Task<bool> Matches()
         {
-            var task = DNSManager.Resolve(Domain, RecordType.MX);
+            var task = _dnsManager.Resolve(Domain, RecordType.MX);
 
             List<Task<IList<IResourceRecord>>> asyncDnsRequests = new List<Task<IList<IResourceRecord>>>();
 
             foreach(var record in task.Result)
             {
                 var mxRecord = (MailExchangeResourceRecord)record;
-                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), IsIpv4 ? RecordType.A : RecordType.AAAA);
+                var resolveMxRecord = _dnsManager.Resolve(mxRecord.ExchangeDomainName.ToString(), IsIpv4 ? RecordType.A : RecordType.AAAA);
                 DnsRequestsCount++;
                 asyncDnsRequests.Add(resolveMxRecord);
             }
@@ -293,7 +296,7 @@ namespace AliasMailApi.Services
 
         public override Task<bool> Matches()
         {
-            var task = DNSManager.Resolve(Domain, RecordType.TXT);
+            var task = _dnsManager.Resolve(Domain, RecordType.TXT);
             DnsRequestsCount++;
 
             List<Task<IList<IResourceRecord>>> asyncDnsRequests = new List<Task<IList<IResourceRecord>>>();
@@ -301,7 +304,7 @@ namespace AliasMailApi.Services
             foreach(var record in task.Result)
             {
                 var mxRecord = (MailExchangeResourceRecord)record;
-                var resolveMxRecord = DNSManager.Resolve(mxRecord.ExchangeDomainName.ToString(), IsIpv4 ? RecordType.A : RecordType.AAAA);
+                var resolveMxRecord = _dnsManager.Resolve(mxRecord.ExchangeDomainName.ToString(), IsIpv4 ? RecordType.A : RecordType.AAAA);
                 DnsRequestsCount++;
                 asyncDnsRequests.Add(resolveMxRecord);
             }
@@ -346,13 +349,16 @@ namespace AliasMailApi.Services
     {
         private readonly MessageContext _context;
         private readonly ILogger _logger;
+        private readonly DNSManager _dnsManager;
 
         public SpfService(
             MessageContext context,
-            ILogger<MailService> logger)
+            ILogger<MailService> logger,
+            DNSManager dnsManager)
         {
             _context = context;
             _logger = logger;
+            _dnsManager = dnsManager;
         }
 
         public Task<BaseMessageSpf> validate(BaseMessage message)
@@ -370,7 +376,7 @@ namespace AliasMailApi.Services
 
                 var domain = domainAndAddress.LastOrDefault();
 
-                var resolvedTxtRecords = DNSManager.Resolve(domain, RecordType.TXT);
+                var resolvedTxtRecords = _dnsManager.Resolve(domain, RecordType.TXT);
                 var countResolvedTxtRecords = resolvedTxtRecords.Result.Count();
 
                 if(countResolvedTxtRecords == 0)

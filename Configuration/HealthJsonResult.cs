@@ -12,10 +12,9 @@ namespace AliasMailApi.Configuration
     public class HealthJsonResult : HealthCheckOptions
     {
         public static string buildInfo;
-        public HealthJsonResult(IOptions<AppOptions> options)
+        public HealthJsonResult()
         {
             base.ResponseWriter = WriteResponse;
-            buildInfo = options.Value.buildInfo;
         }
 
         private static Task WriteResponse(HttpContext httpContext, HealthReport result)
