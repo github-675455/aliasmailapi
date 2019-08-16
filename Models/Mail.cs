@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using aliasmailapi.Models;
 using AliasMailApi.Models.Enum;
-using Microsoft.AspNetCore.Mvc;
 
 namespace AliasMailApi.Models
 {
-    public class Mail
+    public class Mail : BaseModelTemplate
     {
-        [MaxLength(36)]
-        public Guid Id { get; set; }
-        public DateTimeOffset Created { get; set; }
         [MaxLength(256)]
         public string SenderAddress { get; set; }
         [MaxLength(256)]
@@ -68,7 +65,6 @@ namespace AliasMailApi.Models
         }
         public Mail()
         {
-            this.Created = DateTime.Now;
             this.MailAttachmentsJobStatus = JobStats.Pending;
             this.JobStats = JobStats.Pending;
             this.Retries = 10;

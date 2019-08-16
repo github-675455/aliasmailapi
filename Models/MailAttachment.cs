@@ -1,13 +1,11 @@
 using System;
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
+using aliasmailapi.Models;
 using Newtonsoft.Json;
 
 namespace AliasMailApi.Models
 {
-    public class MailAttachment
+    public class MailAttachment : BaseModelTemplate
     {
-        public Guid Id { get; set; }
         [JsonProperty("name")]
         public string Name { get; set; }
         [JsonIgnore]

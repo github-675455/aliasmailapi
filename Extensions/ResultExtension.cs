@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using aliasmailapi.Models;
 using AliasMailApi.Models;
 using AliasMailApi.Models.DTO.Response;
 using Microsoft.AspNetCore.Http;
@@ -21,14 +22,17 @@ namespace aliasmailapi.Extensions
             var page = _accessor.HttpContext.Request.Query["page"];
             var pageSize = _accessor.HttpContext.Request.Query["pageSize"];
             var disableRowCount = _accessor.HttpContext.Request.Query["disableRowCount"];
+            var orderByParamater = _accessor.HttpContext.Request.Query["orderByCreated"];
 
             var pageHasValue = !string.IsNullOrWhiteSpace(page);
             var pageSizeHasValue = !string.IsNullOrWhiteSpace(pageSize);
             var disableRowCountHasValue = !string.IsNullOrWhiteSpace(disableRowCount);
+            var orderByParamaterHasValue = !string.IsNullOrWhiteSpace(orderByParamater);
 
             var pageParsed = 0;
             var pageSizeParsed = 10;
             var disableRowCountParsed = false;
+            var orderByParamaterParsed = false;
 
             if(pageHasValue)
                 pageParsed = Int32.Parse(page);
@@ -38,6 +42,9 @@ namespace aliasmailapi.Extensions
 
             if(disableRowCountHasValue)
                 disableRowCountParsed = Boolean.Parse(disableRowCount);
+
+            if(orderByParamaterHasValue)
+                orderByParamaterParsed = Boolean.Parse(orderByParamater);
 
             var result = new BaseResponse<T>();
             result.CurrentPage = pageParsed;
@@ -50,9 +57,18 @@ namespace aliasmailapi.Extensions
                 result.PageCount = (int)Math.Ceiling(Double.IsNaN(pageCount) ? 0 : pageCount);
             }
 
+            if(orderByParamaterParsed)
+                query = query.OrderByDescending(e => (e as BaseModelTemplate).Created);
+
             var skipActuallyResult = (pageParsed - 1) * pageSizeParsed;
             var skip = skipActuallyResult < 1 ? 0 : skipActuallyResult;
-            result.Data = await query.Skip(skip).Take(pageSizeParsed).ToListAsync();
+            
+            if(pageParsed < 0)
+                pageSizeParsed = result.PageCount.Value - Math.Abs(pageParsed);
+            
+            var finalQuery = query.Skip(skip).Take(pageSizeParsed);
+
+            result.Data = await finalQuery.ToListAsync();
 
             return result;
         }
