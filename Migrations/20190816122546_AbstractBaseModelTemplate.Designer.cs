@@ -3,14 +3,16 @@ using System;
 using AliasMailApi.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AliasMailApi.Migrations
 {
     [DbContext(typeof(MessageContext))]
-    partial class MessageContextModelSnapshot : ModelSnapshot
+    [Migration("20190816122546_AbstractBaseModelTemplate")]
+    partial class AbstractBaseModelTemplate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,8 +36,6 @@ namespace AliasMailApi.Migrations
 
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(4096);
-
-                    b.Property<DateTimeOffset>("LastUpdated");
 
                     b.Property<string>("RemoteIpAddress")
                         .HasMaxLength(45);
@@ -66,8 +66,6 @@ namespace AliasMailApi.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(2048);
 
-                    b.Property<DateTimeOffset>("LastUpdated");
-
                     b.Property<string>("Name")
                         .HasMaxLength(253);
 
@@ -80,9 +78,8 @@ namespace AliasMailApi.Migrations
                         {
                             Id = new Guid("f49c0b55-451c-4955-a25a-a9a19f8e039f"),
                             Active = true,
-                            Created = new DateTimeOffset(new DateTime(2019, 11, 5, 13, 48, 45, 296, DateTimeKind.Unspecified).AddTicks(4334), new TimeSpan(0, -3, 0, 0, 0)),
+                            Created = new DateTimeOffset(new DateTime(2019, 8, 16, 9, 25, 45, 879, DateTimeKind.Unspecified).AddTicks(1664), new TimeSpan(0, -3, 0, 0, 0)),
                             Description = "",
-                            LastUpdated = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Name = "vinicius.sl"
                         });
                 });
@@ -126,8 +123,6 @@ namespace AliasMailApi.Migrations
                         .HasMaxLength(4096);
 
                     b.Property<int>("JobStats");
-
-                    b.Property<DateTimeOffset>("LastUpdated");
 
                     b.Property<string>("MailAttachmentsJobErrorMessage")
                         .HasMaxLength(4096);
@@ -199,8 +194,6 @@ namespace AliasMailApi.Migrations
 
                     b.Property<DateTimeOffset?>("Deleted");
 
-                    b.Property<DateTimeOffset>("LastUpdated");
-
                     b.Property<string>("Name");
 
                     b.Property<long>("Size");
@@ -237,8 +230,6 @@ namespace AliasMailApi.Migrations
 
                     b.Property<string>("Email")
                         .HasMaxLength(512);
-
-                    b.Property<DateTimeOffset>("LastUpdated");
 
                     b.Property<bool>("Reject");
 

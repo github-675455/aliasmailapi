@@ -1,18 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using aliasmailapi.Models;
 
 namespace AliasMailApi.Models
 {
-    public class Mailbox
-    {
-        public Mailbox()
-        {
-            this.Created = DateTime.Now;
-        }
-
-        [Key]
-        public Guid Id { get; set; }
-        
+    public class Mailbox : BaseModelTemplate
+    {   
         [StringLength(512)]
         public string Email { get; set; }
         public Guid DomainId { get; set; }
@@ -24,8 +17,5 @@ namespace AliasMailApi.Models
         public bool Reject { get; set; }
         public bool Delete { get; set; }
         public bool CreatedManually { get; set; }
-        public DateTime Created { get; set; }
-
-        
     }
 }

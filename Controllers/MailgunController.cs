@@ -1,10 +1,8 @@
 ﻿using System.Threading.Tasks;
 using AliasMailApi.Configuration;
 using AliasMailApi.Repository;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using AutoMapper;
 using AliasMailApi.Models.DTO.Response;
@@ -54,13 +52,25 @@ namespace AliasMailApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(Guid id)
         {
-            return Ok(await _context.MailgunMessages.GetOneResult(e => e.Id == id));
+            return Ok(await _context.MailgunMessages
+                                    .GetOneResult(e => e.Id == id));
         }
 
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            return Ok(await _context.MailgunMessages.Select(item => _mapper.Map<SimpleMailgunResponse>(item)).GetPagedResult());
+            return Ok(await _context.MailgunMessages
+                                    .Select(item => _mapper.Map<SimpleMailgunResponse>(item))
+                                    .GetPagedResult());
+        }
+
+        [HttpGet("simple/{id}")]
+        public async Task<IActionResult> GetSimple(Guid id)
+        {
+            return Ok(await _context.MailgunMessages
+                                    .Where(e => e.Id.Equals(id))
+                                    .Select(item => _mapper.Map<SimpleMailgunResponse>(item))
+                                    .FormatOneResult());
         }
     }
 }

@@ -33,7 +33,7 @@ namespace AliasMailApi.Jobs
                     foreach(var item in result)
                     {
                         _logger.LogInformation("Processing item {Id}", item.Id);
-                        var itemResult = await mailService.import(item);
+                        var itemResult = await mailService.process(item);
                         foreach(var error in itemResult.Errors){
                             _logger.LogError("Error {description} ", error.description);
                         }

@@ -1,7 +1,10 @@
+using System;
+
 namespace AliasMailApi.Models.DTO.Response
 {
     public class SimpleMailgunResponse
     {
+        public Guid Id { get; set; }
         public string ContentType { get; set; }
         public string Date { get; set; }
         public string From { get; set; }
