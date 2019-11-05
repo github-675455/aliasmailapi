@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using AliasMailApi.Interfaces;
 using aliasmailapi.Extensions;
-using AliasMailApi.Models;
 using System;
 
 namespace AliasMailApi.Controllers

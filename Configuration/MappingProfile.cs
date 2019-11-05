@@ -39,8 +39,15 @@ namespace AliasMailApi.Configuration
             if(string.IsNullOrWhiteSpace(fullEmail))
                 return string.Empty;
 
-            var mailAdress = new MailAddress(fullEmail);
-            return emailSection == EmailSection.Address ? mailAdress.Address : mailAdress.DisplayName;
+            try
+            {
+                var mailAdress = new MailAddress(fullEmail);
+                return emailSection == EmailSection.Address ? mailAdress.Address : mailAdress.DisplayName;
+            }
+            catch(Exception exception) when (exception is ArgumentNullException || exception is FormatException)
+            {
+                return string.Empty;   
+            }
         }
 
         private static DateTimeOffset? CustomDateEmailFormat(string date)

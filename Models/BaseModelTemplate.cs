@@ -10,6 +10,7 @@ namespace aliasmailapi.Models
         public Guid Id { get; set; }
         public DateTimeOffset? Deleted { get; set; }
         public DateTimeOffset Created { get; set; }
+        public DateTimeOffset LastUpdated { get; set; }
 
         public BaseModelTemplate()
         {

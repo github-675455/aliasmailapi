@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Net.Http.Formatting;
 using System.Threading.Tasks;
 using AliasMailApi.Models;
 using AliasMailApi.Models.DTO;
-using Microsoft.AspNetCore.Http;
 
 namespace AliasMailApi.Interfaces
 {

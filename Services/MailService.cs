@@ -46,144 +46,160 @@ namespace AliasMailApi.Services
 
         public async Task SetMailError(Mail mail, string errorMessage)
         {
+            using(var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                mail.JobStats = JobStats.Error;
 
-            mail.JobStats = JobStats.Error;
+                if (errorMessage.Length > 4096)
+                    errorMessage = errorMessage.Substring(0, 4096);
+                else
+                    mail.ErrorMessage = errorMessage;
 
-            if (errorMessage.Length > 4096)
-                errorMessage = errorMessage.Substring(0, 4096);
-            else
-                mail.ErrorMessage = errorMessage;
+                mail.ErrorDate = DateTime.Now;
+                mail.Retries = mail.Retries - 1;
+                mail.NextRetry = DateTime.Now.AddMinutes(10);
 
-            mail.ErrorDate = DateTime.Now;
-            mail.Retries = mail.Retries - 1;
-            mail.NextRetry = DateTime.Now.AddMinutes(10);
+                _context.Mails.Update(mail);
+                await _context.SaveChangesAsync();
 
-            _context.Mails.Update(mail);
-            await _context.SaveChangesAsync();
+                transaction.Commit();
+            }
         }
 
-        public async Task<BaseResponse<BaseMessage>> import(BaseMessage message)
+        private async Task<BaseResponse<BaseMessage>> import(BaseMessage message)
         {
             var response = BaseResponseFactory<BaseMessage>.CreateDefaultBaseResponse();
-            if (message == null)
+
+            using(var transaction = await _context.Database.BeginTransactionAsync())
             {
-                _logger.LogInformation("Parameter is null");
-                response.Errors.Add(new ApiError { description = "Parameter is null" });
-                return response;
-            }
-
-            if (!message.Valid)
-            {
-                _logger.LogInformation("Message {Id} is not valid by provider, so we cannot process it", message.Id);
-                response.Errors.Add(new ApiError { description = "Message is not valid by provider, so we cannot process it" });
-                return response;
-            }
-
-            if (message is MailgunMessage)
-            {
-                var mailgunMessage = (MailgunMessage)message;
-
-                Mail newMail = null;
-
-                try
+                if (message == null)
                 {
-                    newMail = await _context.Mails
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
+                    _logger.LogInformation("Parameter is null");
+                    response.Errors.Add(new ApiError { description = "Parameter is null" });
+                    return response;
+                }
 
-                    if (newMail == null)
+                if (!message.Valid)
+                {
+                    _logger.LogInformation("Message {Id} is not valid by provider, so we cannot process it", message.Id);
+                    response.Errors.Add(new ApiError { description = "Message is not valid by provider, so we cannot process it" });
+                    return response;
+                }
+
+                if (message is MailgunMessage)
+                {
+                    var mailgunMessage = (MailgunMessage)message;
+
+                    Mail newMail = null;
+
+                    try
                     {
-                        newMail = new Mail(message);
-                        await _context.Mails.AddAsync(newMail);
+                        newMail = await _context.Mails
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e => e.BaseMessageId == message.Id);
+
+                        if (newMail == null)
+                        {
+                            newMail = new Mail(message);
+                            await _context.Mails.AddAsync(newMail);
+                            await _context.SaveChangesAsync();
+                        }
+
+                        if (newMail.Retries <= 0)
+                        {
+                            _logger.LogError("Too many reprocessed");
+                            return response;
+                        }
+
+                        bool recipientEmpty = mailgunMessage.Recipient != null ? mailgunMessage.Recipient.Equals(string.Empty) : true;
+
+                        bool toEmpty = mailgunMessage.To != null ?
+                            mailgunMessage.To.Equals(string.Empty) : true;
+
+                        if(recipientEmpty && toEmpty)
+                        {
+                            _logger.LogInformation("recipient and to email headers are empty");
+                            response.Errors.Add(new ApiError { description = "recipient and to email headers are empty" });
+                            return response;
+                        }
+
+                        var toRecipient = !recipientEmpty ? new MailAddress(mailgunMessage.Recipient) : new MailAddress(mailgunMessage.To);
+                        var domainFound = await _domainService.get(toRecipient.Host);
+
+                        if (domainFound == null)
+                        {
+                            var errorMessage = string.Format("message id: {0} the domain {1} was not found", message.Id, toRecipient.Host);
+                            await SetMailError(newMail, errorMessage);
+                            _logger.LogError(errorMessage);
+                            response.Errors.Add(new ApiError { description = "Domain not found" });
+                            return response;
+                        }
+
+                        var mailboxFound = await _mailboxService.GetMailbox(toRecipient.Address);
+
+                        if (mailboxFound == null)
+                        {
+                            var newMailbox = _mailboxService.CreateDefaultMailbox(toRecipient, domainFound);
+                            mailboxFound = await _mailboxService.CreateMailbox(newMailbox);
+                        }
+
+                        var mail = _mapper.Map<Mail>(mailgunMessage);
+
+                        mail.Id = newMail.Id;
+                        mail.BaseMessageId = newMail.BaseMessageId;
+
+                        _context.Entry(newMail).State = EntityState.Detached;
+
+                        if (mail.Attachments.NotEmpty())
+                        {
+                            var jsonAttachments = mail.Attachments.Replace("\\\"", "\"");
+                            var attachments = JsonConvert.DeserializeObject<MailAttachment[]>(jsonAttachments);
+                            ICollection<Task<MailAttachment>> getFiles = new List<Task<MailAttachment>>();
+
+                            attachments.ToList().ForEach(async e =>
+                            {
+                                e = await _mailgunAttachment.get(e);
+                                e.MailId = mail.Id;
+                                e.Id = Guid.NewGuid();
+                                await _context.AddAsync(e);
+                            });
+
+                            await _context.SaveChangesAsync();
+
+                            mail.MailAttachmentsJobStatus = JobStats.Done;
+                        }
+
+                        mail.ErrorMessage = string.Empty;
+                        mail.ErrorDate = null;
+                        mail.NextRetry = null;
+
+                        mail.JobStats = JobStats.Done;
+                        mail.MailAttachmentsJobStatus = JobStats.Done;
+
+                        _context.Mails.Update(mail);
+
                         await _context.SaveChangesAsync();
+
+                        transaction.Commit();
                     }
-
-                    if (newMail.Retries <= 0)
+                    catch (Exception exception)
                     {
-                        _logger.LogError("Too many reprocessed");
-                        return response;
-                    }
+                        transaction.Rollback();
 
-                    bool recipientEmpty = mailgunMessage.Recipient != null ? mailgunMessage.Recipient.Equals(string.Empty) : true;
-
-                    bool toEmpty = mailgunMessage.To != null ? mailgunMessage.To.Equals(string.Empty) : true;
-
-
-                    if(recipientEmpty && toEmpty)
-                    {
-                        _logger.LogInformation("recipient and to email headers are empty");
-                        response.Errors.Add(new ApiError { description = "recipient and to email headers are empty" });
-                        return response;
-                    }
-
-                    var toRecipient = !recipientEmpty ? new MailAddress(mailgunMessage.Recipient) : new MailAddress(mailgunMessage.To);
-                    var domainFound = await _domainService.get(toRecipient.Host);
-
-                    if (domainFound == null)
-                    {
-                        var errorMessage = string.Format("message id: {0} the domain {1} was not found", message.Id, toRecipient.Host);
+                        var errorMessage = string.Format("{0} - {1}", exception.Message, exception.StackTrace);
                         await SetMailError(newMail, errorMessage);
                         _logger.LogError(errorMessage);
-                        response.Errors.Add(new ApiError { description = "Domain not found" });
-                        return response;
+                        response.Errors.Add(new ApiError { description = errorMessage });
                     }
-
-                    var mailboxFound = await _mailboxService.GetMailbox(toRecipient.Address);
-
-                    if (mailboxFound == null)
-                    {
-                        var newMailbox = _mailboxService.CreateDefaultMailbox(toRecipient, domainFound);
-                        mailboxFound = await _mailboxService.CreateMailbox(newMailbox);
-                    }
-
-                    var mail = _mapper.Map<Mail>(mailgunMessage);
-
-                    mail.Id = newMail.Id;
-                    mail.BaseMessageId = newMail.BaseMessageId;
-
-                    _context.Entry(newMail).State = EntityState.Detached;
-
-                    if (mail.Attachments.NotEmpty())
-                    {
-                        var jsonAttachments = mail.Attachments.Replace("\\\"", "\"");
-                        var attachments = JsonConvert.DeserializeObject<MailAttachment[]>(jsonAttachments);
-                        ICollection<Task<MailAttachment>> getFiles = new List<Task<MailAttachment>>();
-
-                        attachments.ToList().ForEach(async e =>
-                        {
-                            e = await _mailgunAttachment.get(e);
-                            e.MailId = mail.Id;
-                            e.Id = Guid.NewGuid();
-                            await _context.AddAsync(e);
-                        });
-
-                        await _context.SaveChangesAsync();
-
-                        mail.MailAttachmentsJobStatus = JobStats.Done;
-                    }
-
-                    mail.ErrorMessage = string.Empty;
-                    mail.ErrorDate = null;
-                    mail.NextRetry = null;
-
-                    mail.JobStats = JobStats.Done;
-                    mail.MailAttachmentsJobStatus = JobStats.Done;
-
-                    _context.Mails.Update(mail);
-
-                    await _context.SaveChangesAsync();
-
-                }
-                catch (Exception exception)
-                {
-                    var errorMessage = string.Format("{0} - {1}", exception.Message, exception.StackTrace);
-                    await SetMailError(newMail, errorMessage);
-                    _logger.LogError(errorMessage);
-                    response.Errors.Add(new ApiError { description = errorMessage });
                 }
             }
 
             return response;
+        }
+
+        public Task<BaseResponse<BaseMessage>> process(BaseMessage message)
+        {
+            return import(message);
         }
     }
 }

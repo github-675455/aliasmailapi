@@ -10,7 +10,6 @@ using AliasMailApi.Models.DTO;
 using AliasMailApi.Interfaces;
 using AutoMapper;
 using AliasMailApi.Models.DTO.Response;
-using AliasMailApi.Extensions;
 using aliasmailapi.Extensions;
 
 namespace AliasMailApi.Controllers
@@ -48,7 +47,7 @@ namespace AliasMailApi.Controllers
                 return Ok(response);
             }
 
-            return Ok(await _mailService.import(response.Data));
+            return Ok(await _mailService.process(response.Data));
         }
 
         [HttpDelete]
@@ -72,7 +71,18 @@ namespace AliasMailApi.Controllers
         [HttpGet("simple")]
         public async Task<IActionResult> GetSimple()
         {
-            return Ok(await _context.Mails.Select(item => _mapper.Map<SimpleMailResponse>(item)).GetPagedResult());
+            return Ok(await _context.Mails
+                                    .Select(item => _mapper.Map<SimpleMailResponse>(item))
+                                    .GetPagedResult());
+        }
+        
+        [HttpGet("simple/{id}")]
+        public async Task<IActionResult> GetSimple(Guid id)
+        {
+            return Ok(await _context.Mails
+                            .Where(e => e.Id.Equals(id))
+                            .Select(item => _mapper.Map<SimpleMailResponse>(item))
+                            .FormatOneResult());
         }
     }
 }
