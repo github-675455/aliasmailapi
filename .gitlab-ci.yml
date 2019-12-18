@@ -22,8 +22,6 @@ stages:
 
 develop_build:
   <<: *build_template
-  only:
-    - master
   artifacts:
     expire_in: 1 day
     paths:
@@ -49,8 +47,6 @@ develop_build:
 
 develop_docker:
   <<: *docker_template
-  only:
-    - master
   dependencies:
     - develop_build
   variables:
