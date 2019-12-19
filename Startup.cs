@@ -35,6 +35,18 @@ namespace AliasMailApi
             var env = services.BuildServiceProvider()
             .GetRequiredService<IHostingEnvironment>();
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("DefaultPolicy",
+                builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyHeader()
+                           .AllowAnyMethod();
+                });
+            });
+
+
             services.AddOptions();
             services.AddStackExchangeRedisCache(options =>
             {
@@ -123,10 +135,13 @@ namespace AliasMailApi
 
             app.UseHealthChecks("/health", new HealthJsonResult(options));
 
+            app.UseCors("DefaultPolicy"); 
+            
             app.UseEndpointRouting();
             app.UseMiddleware<AutorizationMiddleware>();
 
             app.UseMvc();
+
         }
     }
 }
