@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using aliasmailapi.Models;
 using aliasmailapi.Services;
@@ -23,11 +24,24 @@ namespace aliasmailapi.Controllers
         }
         
         [HttpPost]
-        public async Task<IActionResult> Post([Bind("PushEndpoint,PushP256DH,PushAuth")] DeviceSubscription device)
+        public async Task<IActionResult> Post([Bind(DeviceSubscription.USER_INPUT_FIELDS)] DeviceSubscription device)
         {
+            if(!device.PushEndpoint.StartsWith("https://fcm.googleapis.com/fcm/send"))
+                return Forbid("PushEndpoint must start with https://fcm.googleapis.com/fcm/send");
+
+            if(!Uri.IsWellFormedUriString(device.PushEndpoint, UriKind.Absolute))
+                return Forbid("Not well formed Url");
+
             _context.DevicesSubscriptions.Add(device);
             await _context.SaveChangesAsync();
             return Ok();
+        }
+
+        [HttpPost("message")]
+        public async Task<IActionResult> Send(string text)
+        {
+            _notificationService.send(text);
+            return await Task.FromResult(Ok());
         }
     }
 }
