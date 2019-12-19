@@ -31,7 +31,7 @@ namespace aliasmailapi.Extensions
             var orderByParamaterHasValue = !string.IsNullOrWhiteSpace(orderByParamater);
             var lastXRecordsHasValue = !string.IsNullOrWhiteSpace(lastXRecords);
 
-            var pageParsed = 0;
+            var pageParsed = 1;
             var pageSizeParsed = 10;
             var lastXRecordsParsed = 0;
             var disableRowCountParsed = false;

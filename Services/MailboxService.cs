@@ -3,16 +3,8 @@ using System.Threading.Tasks;
 using AliasMailApi.Models;
 using AliasMailApi.Repository;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using AliasMailApi.Interfaces;
-using AutoMapper;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
-using System;
-using AliasMailApi.Extensions;
 using Microsoft.Extensions.Logging;
-using AliasMailApi.Models.Enum;
 
 namespace AliasMailApi.Services
 {

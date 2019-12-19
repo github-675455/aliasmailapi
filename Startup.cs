@@ -45,6 +45,8 @@ namespace AliasMailApi
             var consumerToken = Environment.GetEnvironmentVariable("ConsumerToken");
             var mailgunApiTokenEnviroment = Environment.GetEnvironmentVariable("MailgunApiKey");
             var mailgunApiDomainEnviroment = Environment.GetEnvironmentVariable("MailgunDomain");
+            var vapidPrivateKeyEnviroment = Environment.GetEnvironmentVariable("VapidPrivateKey");
+            var vapidPublicKeyEnviroment = Environment.GetEnvironmentVariable("VapidPublicKey");
 
             defaultConnection = String.IsNullOrEmpty(defaultConnection) ? Configuration.GetConnectionString("DefaultConnection") : defaultConnection;
 
