@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Internal;
 using Microsoft.Extensions.Options;
 using aliasmailapi.Extensions;
 using Microsoft.AspNetCore.Http;
+using aliasmailapi.Services;
 
 namespace AliasMailApi
 {
@@ -78,6 +79,7 @@ namespace AliasMailApi
             services.AddTransient<IDomainService, DomainService>();
             services.AddTransient<IMailboxService, MailboxService>();
             services.AddTransient<IMailService, MailService>();
+            services.AddTransient<NotificationService>();
             services.AddTransient<IMailgunAttachment, MailgunAttachmentService>();
             services.AddTransient<IAuthenticationService, AuthenticationService>();
             services.AddHostedService<MailImportJob>();
