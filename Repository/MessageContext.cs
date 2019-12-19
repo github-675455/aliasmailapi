@@ -1,4 +1,5 @@
 using System;
+using aliasmailapi.Models;
 using AliasMailApi.Models;
 using AliasMailApi.Models.Enum;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ namespace AliasMailApi.Repository
         public DbSet<BaseMessage> Messages { get; set; }
         public DbSet<MailgunMessage> MailgunMessages { get; set; }
         public DbSet<Mailbox> Mailboxes { get; set; }
+        public DbSet<Device> Devices { get; set; }
+        public DbSet<DeviceSubscription> DevicesSubscriptions { get; set; }
         public DbSet<Domain> Domains { get; set; }
         public DbSet<Mail> Mails { get; set; }
         public DbSet<MailAttachment> MailAttachments { get; set; }
@@ -32,6 +35,9 @@ namespace AliasMailApi.Repository
                 v => v.ToString(),
                 v => (JobStats)Enum.Parse(typeof(JobStats),v))
                 .IsUnicode(false);
+
+            builder.Entity<UserDevice>()
+            .HasKey(e => new { e.UserId, e.DeviceId });
         }
     }
 }
